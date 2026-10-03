@@ -23,6 +23,13 @@ class Item(models.Model):
     def is_low_stock(self):
         return self.current_stock() <= self.reorder_level
 
+    def delete(self, *args, **kwargs):
+        if self.movements.exists() or self.invoice_lines.exists():
+            raise ValidationError(
+                'Items with history cannot be deleted. Keep the row and stop selling it instead.'
+            )
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return f'{self.sku} - {self.name}'
 
@@ -34,6 +41,9 @@ POSITIVE_MOVEMENT_TYPES = frozenset({'purchase', 'return', 'production'})
 
 
 class StockMovementQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError('Stock movements are append-only and cannot be updated.')
+
     def delete(self):
         raise ValidationError('Stock movements are append-only and cannot be deleted.')
 

@@ -1,6 +1,7 @@
-from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum, Value
-from django.db.models.functions import Coalesce
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import DecimalField, ExpressionWrapper, F, Sum, Value
+from django.db.models.functions import Coalesce
 
 from core.money import money, zero_money
 
@@ -8,10 +9,6 @@ from core.money import money, zero_money
 # Issued + paid invoices count as billed (draft/voided do not).
 _BILLED_STATUSES = ('issued', 'paid')
 
-_LINE_TOTAL = ExpressionWrapper(
-    F('quantity') * F('unit_price'),
-    output_field=DecimalField(max_digits=14, decimal_places=2),
-)
 # Same tax % on every line of an invoice equals tax on the invoice subtotal.
 _LINE_WITH_TAX = ExpressionWrapper(
     F('quantity') * F('unit_price') * (Value(1) + F('invoice__tax_percent') / Value(100)),
@@ -22,7 +19,7 @@ _LINE_WITH_TAX = ExpressionWrapper(
 class Customer(models.Model):
     name = models.CharField(max_length=200)
     email = models.EmailField(blank=True, null=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
+    phone = models.CharField(blank=True, max_length=20, null=True)
     address = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -82,6 +79,14 @@ class Customer(models.Model):
                 remaining_amount__gt=0,
             ).aggregate(total=Coalesce(Sum('remaining_amount'), Value(0)))
         )
+
+    def delete(self, *args, **kwargs):
+        # History stays in the ledger; deactivate instead.
+        if self.invoices.exists() or self.credit_notes.exists():
+            raise ValidationError(
+                'Customers with history cannot be deleted. Set is_active=False instead.'
+            )
+        super().delete(*args, **kwargs)
 
     def __str__(self):
         return self.name

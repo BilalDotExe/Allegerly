@@ -1,22 +1,26 @@
-"""Stock primitives. Higher-level flows (issue, damage, …) call these inside atomic()."""
-
-from django.contrib.contenttypes.models import ContentType
-
-from inventory.models import StockMovement
+from django.db import transaction
+from .models import StockMovement
 
 
-def create_stock_movement(*, item, movement_type, quantity, user, note='', source=None):
-    content_type = None
-    object_id = None
-    if source is not None:
-        content_type = ContentType.objects.get_for_model(source, for_concrete_model=False)
-        object_id = source.pk
-    return StockMovement.objects.create(
+@transaction.atomic
+def create_stock_movement(item, movement_type, quantity, note, created_by, source=None):
+    if movement_type in ('sale', 'damaged', 'expired') and quantity > 0:
+        raise ValueError(f"{movement_type} movements must be negative.")
+    if movement_type in ('purchase', 'production', 'return') and quantity < 0:
+        raise ValueError(f"{movement_type} movements must be positive.")
+
+    movement = StockMovement(
         item=item,
         movement_type=movement_type,
         quantity=quantity,
-        note=note or '',
-        created_by=user,
-        content_type=content_type,
-        object_id=object_id,
+        note=note,
+        created_by=created_by,
     )
+    if source is not None:
+        from django.contrib.contenttypes.models import ContentType
+        movement.content_type = ContentType.objects.get_for_model(source)
+        movement.object_id = source.pk
+
+    movement.full_clean()
+    movement.save()
+    return movement
