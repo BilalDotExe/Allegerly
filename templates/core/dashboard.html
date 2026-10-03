@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Dashboard</h1>
+<p class="text-muted">
+  Welcome, {{ user.username }}. Alerts for low stock, outstanding invoices,
+  damages, and batch expiry will appear here in later phases.
+</p>
+<div class="alert alert-secondary" role="status">
+  Placeholder dashboard — Phase 1 groundwork only.
+</div>
+{% endblock %}
