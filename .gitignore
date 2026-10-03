@@ -35,4 +35,4 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
-.cursorrules
+cursor rules.md

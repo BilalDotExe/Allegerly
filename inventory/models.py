@@ -96,3 +96,18 @@ class StockMovement(models.Model):
 
     def __str__(self):
         return f'{self.item.sku} | {self.movement_type} | {self.quantity}'
+
+class ExpiryWriteOff(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.PROTECT, related_name='expiry_writeoffs')
+    quantity = models.PositiveIntegerField()
+    date_noticed = models.DateField()
+    note = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey('auth.User', on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def loss_value(self):
+        return self.quantity * self.item.cost_price
+
+    def __str__(self):
+        return f"Expiry: {self.item.sku} x{self.quantity} on {self.date_noticed}"

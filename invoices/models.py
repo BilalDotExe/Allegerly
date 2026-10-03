@@ -217,10 +217,6 @@ class Payment(models.Model):
 
 
 class CreditNote(models.Model):
-    REASON_CHOICES = [
-        ('return', 'Customer Return'),
-        ('damage', 'Damaged Goods'),
-    ]
     REFUND_METHODS = Payment.PAYMENT_METHODS
 
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='credit_notes')
@@ -228,12 +224,12 @@ class CreditNote(models.Model):
     return_record = models.OneToOneField(
         'returns.ReturnRecord',
         on_delete=models.PROTECT,
+        related_name='credit_note',
         null=True,
         blank=True,
-        related_name='credit_note',
     )
     credit_number = models.CharField(max_length=50, unique=True, blank=True)
-    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    reason = models.CharField(max_length=255, blank=True, null=True, help_text="Optional free-text reason")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     remaining_amount = models.DecimalField(max_digits=10, decimal_places=2)
     is_applied = models.BooleanField(default=False)
@@ -243,7 +239,7 @@ class CreditNote(models.Model):
     note = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
     def save(self, *args, **kwargs):
         if self.amount is not None:
             self.amount = money(self.amount)
