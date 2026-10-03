@@ -103,7 +103,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 # None → LogoutView renders registration/logged_out.html after POST logout
-LOGOUT_REDIRECT_URL = None
+LOGOUT_REDIRECT_URL = 'login'
 
 # django-axes 8.x — lock by username+IP pair (shared LAN IPs still isolate users)
 AXES_FAILURE_LIMIT = 5
