@@ -1,0 +1,50 @@
+<nav class="col-md-2 d-none d-md-block bg-white sidebar border-end">
+  <div class="position-sticky pt-3">
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'customers:list' %}">Customers</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'inventory:list' %}">Items</a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'invoices:list' %}">Invoices</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'invoices:credit_list' %}">Credit Notes</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'damages:list' %}">Damage Reports</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'returns:list' %}">Returns</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'production:list' %}">Production Batches</a>
+      </li>
+      {% if perms.audit.view_auditlog %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'audit:list' %}">Audit Log</a>
+        </li>
+      {% endif %}
+
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'inventory:movements' %}">Stock Movements</a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'inventory:expiry_list' %}">Expiry Write-offs</a>
+      </li>
+
+      {% if perms.inventory.add_stockmovement %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'inventory:adjust' %}">Stock Adjustment</a>
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>

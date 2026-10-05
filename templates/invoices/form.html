@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Allegderly{% endblock %}
+{% block content %}<h2>{{ title }}</h2><form method="post" class="mt-3">{% csrf_token %}<div class="row"><div class="col-md-6">
+{% for field in form %}<div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div></div>
+{{ formset.management_form }}{% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors }}</div>{% endif %}
+<div class="table-responsive"><table class="table table-hover bg-white" id="invoice-lines"><thead class="table-dark"><tr><th>Item</th><th>Quantity</th><th>Unit Price</th><th>Delete</th></tr></thead><tbody>
+{% for line_form in formset %}<tr class="line-row">{% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}<td>{{ line_form.item }}{{ line_form.item.errors }}</td><td>{{ line_form.quantity }}{{ line_form.quantity.errors }}</td><td>{{ line_form.unit_price }}{{ line_form.unit_price.errors }}</td><td>{% if line_form.DELETE %}<div class="form-check">{{ line_form.DELETE }}</div>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div><button type="button" class="btn btn-outline-primary mb-3" id="add-line">Add line</button><div><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-secondary ms-2" href="{% url 'invoices:list' %}">Cancel</a></div></form>
+{% endblock %}
+{% block extra_js %}<script>
+(function(){const add=document.getElementById('add-line'), body=document.querySelector('#invoice-lines tbody'), total=document.getElementById('id_lines-TOTAL_FORMS'); if(!add||!body||!total)return; add.addEventListener('click',function(){const index=Number(total.value), rows=body.querySelectorAll('.line-row'), template=rows[rows.length-1].cloneNode(true); template.querySelectorAll('input,select,textarea,label').forEach(function(el){if(el.name)el.name=el.name.replace(/-\d+-/g,'-'+index+'-');if(el.id)el.id=el.id.replace(/-\d+-/g,'-'+index+'-');if(el.htmlFor)el.htmlFor=el.htmlFor.replace(/-\d+-/g,'-'+index+'-');if(el.type==='checkbox')el.checked=false;else if(el.tagName==='SELECT')el.selectedIndex=0;else if(el.type!=='hidden')el.value='';}); body.appendChild(template);total.value=index+1;});})();
+</script>{% endblock %}

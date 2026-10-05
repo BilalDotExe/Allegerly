@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ customer.name }} | Allegderly{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>{{ customer.name }}</h2>
+  <a href="{% url 'customers:edit' customer.pk %}" class="btn btn-outline-secondary">Edit</a>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <p><strong>Phone:</strong> {{ customer.phone|default:"-" }}</p>
+    <p><strong>Email:</strong> {{ customer.email|default:"-" }}</p>
+    <p><strong>Address:</strong> {{ customer.address|default:"-" }}</p>
+    <p><strong>Status:</strong>
+      {% if customer.is_active %}
+        <span class="badge bg-success">Active</span>
+      {% else %}
+        <span class="badge bg-secondary">Inactive</span>
+      {% endif %}
+    </p>
+    <p><strong>Outstanding Balance:</strong> ${{ customer.balance }}</p>
+  </div>
+</div>
+
+<a href="{% url 'customers:list' %}" class="btn btn-secondary">Back to Customers</a>
+{% endblock %}

@@ -1,10 +1,14 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from .models import ReturnRecord
+from audit.services import log as audit_log
 
 
 @transaction.atomic
-def log_return(invoice_line, quantity, date_returned, created_by, is_restockable=True, note=''):
+def log_return(
+    invoice_line, quantity, date_returned, created_by, is_restockable=True,
+    note='', request=None, resolution="apply", refund_method=None,
+):
     if quantity <= 0:
         raise ValidationError("Return quantity must be positive.")
 
@@ -28,12 +32,18 @@ def log_return(invoice_line, quantity, date_returned, created_by, is_restockable
         customer=invoice_line.invoice.customer,
         invoice=invoice_line.invoice,
         return_record=record,
-        reason=reason,
+        reason=f"Customer return: {invoice_line.item.name} x{quantity}",
         amount=quantity * invoice_line.unit_price,
         remaining_amount=quantity * invoice_line.unit_price,
         note=f"Return of {invoice_line.item.name} x{quantity}",
         created_by=created_by,
     )
+
+    if resolution == "refund" and refund_method:
+        credit_note.is_refunded = True
+        credit_note.refund_method = refund_method
+        credit_note.refund_date = date_returned
+        credit_note.save()
 
     if is_restockable:
         from inventory.services import create_stock_movement
@@ -45,5 +55,7 @@ def log_return(invoice_line, quantity, date_returned, created_by, is_restockable
             created_by=created_by,
             source=record,
         )
+
+    audit_log(created_by, 'return_logged', record, request=request)
 
     return record, credit_note

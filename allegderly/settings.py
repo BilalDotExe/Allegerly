@@ -1,6 +1,7 @@
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from django.contrib.messages import constants as messages
 
 load_dotenv()
 
@@ -95,7 +96,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -191,3 +192,8 @@ LOGGING = {
 
 # Dashboard: warn about production batches expiring within this many days (Phase 4)
 BATCH_EXPIRY_ALERT_DAYS = 30
+
+
+MESSAGE_TAGS = {
+    messages.ERROR: "danger",
+}

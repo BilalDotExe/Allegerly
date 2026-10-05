@@ -10,11 +10,11 @@ from core.money import money, zero_money
 from customers.models import Customer
 from inventory.models import Item
 
-
 _LINE_TOTAL = ExpressionWrapper(
     F('quantity') * F('unit_price'),
     output_field=DecimalField(max_digits=14, decimal_places=2),
 )
+_ZERO = Value(Decimal('0.00'), output_field=DecimalField(max_digits=14, decimal_places=2))
 
 # After draft, only status may change (issue / pay / void / reopen after voiding a payment).
 _LOCKED_INVOICE_FIELDS = (
@@ -114,7 +114,7 @@ class Invoice(models.Model):
 
     @property
     def subtotal(self):
-        total = self.lines.aggregate(total=Coalesce(Sum(_LINE_TOTAL), Value(0)))['total']
+        total = self.lines.aggregate(total=Coalesce(Sum(_LINE_TOTAL), _ZERO))['total']
         return money(total)
 
     @property
@@ -128,16 +128,29 @@ class Invoice(models.Model):
     @property
     def total_paid(self):
         total = self.payments.filter(is_voided=False).aggregate(
-            total=Coalesce(Sum('amount'), Value(0))
+            total=Coalesce(Sum('amount'), _ZERO)
         )['total']
         return money(total)
 
     @property
     def total_credits_applied(self):
         total = self.credit_applications.aggregate(
-            total=Coalesce(Sum('amount'), Value(0))
+            total=Coalesce(Sum('amount'), _ZERO)
         )['total']
         return money(total)
+
+    @property
+    def return_status(self):
+        lines = self.lines.all()
+        if not lines:
+            return None
+        total_qty = sum(line.quantity for line in lines)
+        total_returned = sum(line.returned_qty for line in lines)
+        if total_returned == 0:
+            return None
+        if total_returned >= total_qty:
+            return "Fully Returned"
+        return "Partially Returned"
 
     @property
     def balance_due(self):

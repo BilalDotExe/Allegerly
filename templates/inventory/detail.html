@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.name }} | Allegderly{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>{{ item.sku }} - {{ item.name }}</h2>
+  <a href="{% url 'inventory:edit' item.pk %}" class="btn btn-outline-secondary">Edit</a>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <p><strong>Description:</strong> {{ item.description|default:"-" }}</p>
+    <p><strong>Cost Price:</strong> ${{ item.cost_price }}</p>
+    <p><strong>Sale Price:</strong> ${{ item.sale_price }}</p>
+    <p><strong>Current Stock:</strong> {{ item.current_stock }}
+      {% if item.is_low_stock %}<span class="badge bg-warning text-dark">Low Stock</span>{% endif %}
+    </p>
+    <p><strong>Reorder Level:</strong> {{ item.reorder_level }}</p>
+    <p><strong>Has Expiry:</strong> {{ item.has_expiry|yesno:"Yes,No" }}</p>
+  </div>
+</div>
+
+<h4>Recent Movements</h4>
+<table class="table table-sm bg-white">
+  <thead class="table-dark">
+    <tr>
+      <th>Date</th>
+      <th>Type</th>
+      <th>Quantity</th>
+      <th>Note</th>
+      <th>By</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for movement in movements %}
+    <tr>
+      <td>{{ movement.created_at|date:"Y-m-d H:i" }}</td>
+      <td>{{ movement.get_movement_type_display }}</td>
+      <td>{{ movement.quantity }}</td>
+      <td>{{ movement.note|default:"-" }}</td>
+      <td>{{ movement.created_by }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-muted">No movements yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'inventory:list' %}" class="btn btn-secondary">Back to Items</a>
+{% endblock %}

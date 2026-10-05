@@ -1,10 +1,11 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from .models import DamageReport
+from audit.services import log as audit_log
 
 
 @transaction.atomic
-def log_damage(item, quantity, date_reported, created_by, invoice_line=None, note=''):
+def log_damage(item, quantity, date_reported, created_by, invoice_line=None, note='', request=None):
     if quantity <= 0:
         raise ValidationError("Damage quantity must be positive.")
 
@@ -30,11 +31,13 @@ def log_damage(item, quantity, date_reported, created_by, invoice_line=None, not
     from inventory.services import create_stock_movement
     create_stock_movement(
         item=item,
-        movement_type='damaged',
+        movement_type='damage',
         quantity=-quantity,
         note=f"Damage report #{report.id}" + (f" ({note})" if note else ""),
         created_by=created_by,
         source=report,
     )
+
+    audit_log(created_by, 'damage_logged', report, request=request)
 
     return report

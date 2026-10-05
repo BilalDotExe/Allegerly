@@ -1,0 +1,12 @@
+<nav class="navbar navbar-dark bg-dark px-3">
+  <span class="navbar-brand mb-0 h1">Allegderly</span>
+  {% if user.is_authenticated %}
+    <div class="d-flex align-items-center">
+      <span class="text-light me-3">{{ user.username }}</span>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-light btn-sm" type="submit">Log out</button>
+      </form>
+    </div>
+  {% endif %}
+</nav>

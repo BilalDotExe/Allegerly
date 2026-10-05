@@ -1,5 +1,6 @@
 from django.db import transaction
 from .models import StockMovement
+from audit.services import log as audit_log
 
 
 @transaction.atomic
@@ -26,7 +27,7 @@ def create_stock_movement(item, movement_type, quantity, note, created_by, sourc
     return movement
 
 @transaction.atomic
-def log_expiry(item, quantity, date_noticed, created_by, note=''):
+def log_expiry(item, quantity, date_noticed, created_by, note='', request=None):
     if quantity <= 0:
         raise ValueError("Expiry quantity must be positive.")
     if item.current_stock() < quantity:
@@ -49,20 +50,29 @@ def log_expiry(item, quantity, date_noticed, created_by, note=''):
         created_by=created_by,
         source=writeoff,
     )
+    audit_log(created_by, 'expiry_logged', writeoff, request=request)
     return writeoff
 
 
 @transaction.atomic
-def adjust_stock(item, quantity, reason, created_by):
+def adjust_stock(item, quantity, reason, created_by, request=None):
     if quantity == 0:
         raise ValueError("Adjustment quantity cannot be zero.")
     if not reason:
         raise ValueError("A reason is required for manual stock adjustments.")
 
-    return create_stock_movement(
+    movement = create_stock_movement(
         item=item,
         movement_type='adjustment',
         quantity=quantity,
         note=reason,
         created_by=created_by,
     )
+    audit_log(
+        created_by,
+        'stock_adjusted',
+        movement,
+        changes={'item': str(item), 'quantity': str(quantity), 'reason': reason},
+        request=request,
+    )
+    return movement

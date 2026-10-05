@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Expiry Write-offs | Allegderly{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Expiry Write-offs</h2>
+  <a href="{% url 'inventory:expiry_create' %}" class="btn btn-primary">New Write-off</a>
+</div>
+
+<table class="table table-hover bg-white">
+  <thead class="table-dark">
+    <tr>
+      <th>Date Noticed</th>
+      <th>Item</th>
+      <th>Quantity</th>
+      <th>Loss Value</th>
+      <th>Note</th>
+      <th>By</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for writeoff in writeoffs %}
+    <tr>
+      <td>{{ writeoff.date_noticed }}</td>
+      <td><a href="{% url 'inventory:detail' writeoff.item.pk %}">{{ writeoff.item.sku }}</a></td>
+      <td>{{ writeoff.quantity }}</td>
+      <td>${{ writeoff.loss_value }}</td>
+      <td>{{ writeoff.note|default:"-" }}</td>
+      <td>{{ writeoff.created_by }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="text-muted">No write-offs yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
