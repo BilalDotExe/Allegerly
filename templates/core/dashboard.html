@@ -1,5 +1,30 @@
-{% extends "base.html" %}{% block title %}Dashboard | Allegderly{% endblock %}{% block content %}<h2>Dashboard</h2><p>Welcome, {{ request.user.username }}.</p><div class="row g-4">
-<section class="col-lg-6"><div class="d-flex justify-content-between align-items-center"><h4>Low Stock</h4><a href="{% url 'inventory:list' %}">View all</a></div><table class="table table-hover bg-white"><thead class="table-dark"><tr><th>Item</th><th>Stock</th><th>Reorder Level</th></tr></thead><tbody>{% for item in low_stock_items %}<tr><td><a href="{% url 'inventory:detail' item.pk %}">{{ item.name }}</a></td><td>{{ item.current_stock }}</td><td>{{ item.reorder_level }}</td></tr>{% empty %}<tr><td colspan="3" class="text-muted">No low stock items.</td></tr>{% endfor %}</tbody></table></section>
-<section class="col-lg-6"><div class="d-flex justify-content-between align-items-center"><h4>Outstanding Invoices</h4><a href="{% url 'invoices:list' %}">View all</a></div><table class="table table-hover bg-white"><thead class="table-dark"><tr><th>Invoice</th><th>Customer</th><th>Balance</th><th>Days Overdue</th></tr></thead><tbody>{% for invoice in outstanding_invoices %}<tr><td><a href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td><td>{{ invoice.customer.name }}</td><td>${{ invoice.balance_due }}</td><td>{{ invoice.days_overdue }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">No outstanding invoices.</td></tr>{% endfor %}</tbody></table></section>
-<section class="col-lg-6"><div class="d-flex justify-content-between align-items-center"><h4>Recent Damage Reports</h4><a href="{% url 'damages:list' %}">View all</a></div><table class="table table-hover bg-white"><thead class="table-dark"><tr><th>Date</th><th>Item</th><th>Quantity</th><th>Loss</th></tr></thead><tbody>{% for report in recent_damage_reports %}<tr><td>{{ report.date_reported }}</td><td>{{ report.item.name }}</td><td>{{ report.quantity }}</td><td>${{ report.loss_value }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">No damage reports.</td></tr>{% endfor %}</tbody></table></section>
-<section class="col-lg-6"><div class="d-flex justify-content-between align-items-center"><h4>Upcoming Expiring Stock</h4><a href="{% url 'production:list' %}">View all</a></div><table class="table table-hover bg-white"><thead class="table-dark"><tr><th>Batch</th><th>Item</th><th>Expiry Date</th><th>Quantity</th></tr></thead><tbody>{% for batch in expiring_batches %}<tr><td>{{ batch.batch_code }}</td><td>{{ batch.item.name }}</td><td>{{ batch.expiry_date }}</td><td>{{ batch.quantity_produced }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">No batches expiring soon.</td></tr>{% endfor %}</tbody></table></section></div>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Dashboard | Allegderly{% endblock %}
+{% block content %}
+<div class="page-heading dashboard-heading">
+  <div><div class="eyebrow">OPERATIONS</div><h1>Good to see you, {{ request.user.username }}.</h1><p class="page-subtitle">A clear view of the work that needs your attention.</p></div>
+  <a class="btn btn-primary app-primary-button" href="{% url 'invoices:list' %}">View invoices <span aria-hidden="true">→</span></a>
+</div>
+
+<div class="dashboard-grid">
+  <section class="dashboard-panel">
+    <div class="panel-heading"><div><h2>Low stock</h2><p>Items at or below their reorder level</p></div><a class="panel-link" href="{% url 'inventory:list' %}">View all <span aria-hidden="true">→</span></a></div>
+    <div class="table-responsive"><table class="table app-table"><thead><tr><th>Item</th><th>In stock</th><th>Reorder at</th></tr></thead><tbody>{% for item in low_stock_items %}<tr><td><a class="table-primary-link" href="{% url 'inventory:detail' item.pk %}">{{ item.name }}</a></td><td><span class="stock-warning">{{ item.current_stock }}</span></td><td>{{ item.reorder_level }}</td></tr>{% empty %}<tr><td colspan="3"><div class="empty-state"><span class="empty-mark">✓</span><span><strong>Stock levels look good</strong><small>No items need reordering right now.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
+  </section>
+
+  <section class="dashboard-panel">
+    <div class="panel-heading"><div><h2>Outstanding invoices</h2><p>Balances awaiting payment</p></div><a class="panel-link" href="{% url 'invoices:list' %}">View all <span aria-hidden="true">→</span></a></div>
+    <div class="table-responsive"><table class="table app-table"><thead><tr><th>Invoice</th><th>Customer</th><th>Balance</th><th>Overdue</th></tr></thead><tbody>{% for invoice in outstanding_invoices %}<tr><td><a class="table-primary-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td><td>{{ invoice.customer.name }}</td><td class="amount-cell">${{ invoice.balance_due }}</td><td>{% if invoice.days_overdue %}<span class="overdue-value">{{ invoice.days_overdue }} days</span>{% else %}<span class="text-secondary">Current</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="4"><div class="empty-state"><span class="empty-mark">✓</span><span><strong>All caught up</strong><small>There are no outstanding invoices.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
+  </section>
+
+  <section class="dashboard-panel">
+    <div class="panel-heading"><div><h2>Recent damage reports</h2><p>Recently recorded inventory loss</p></div><a class="panel-link" href="{% url 'damages:list' %}">View all <span aria-hidden="true">→</span></a></div>
+    <div class="table-responsive"><table class="table app-table"><thead><tr><th>Date</th><th>Item</th><th>Quantity</th><th>Loss</th></tr></thead><tbody>{% for report in recent_damage_reports %}<tr><td>{{ report.date_reported }}</td><td>{{ report.item.name }}</td><td>{{ report.quantity }}</td><td class="amount-cell">${{ report.loss_value }}</td></tr>{% empty %}<tr><td colspan="4"><div class="empty-state"><span class="empty-mark">–</span><span><strong>No recent reports</strong><small>New damage reports will appear here.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
+  </section>
+
+  <section class="dashboard-panel">
+    <div class="panel-heading"><div><h2>Upcoming expirations</h2><p>Production batches nearing expiry</p></div><a class="panel-link" href="{% url 'production:list' %}">View batches <span aria-hidden="true">→</span></a></div>
+    <div class="table-responsive"><table class="table app-table"><thead><tr><th>Batch</th><th>Item</th><th>Expiry date</th><th>Quantity</th></tr></thead><tbody>{% for batch in expiring_batches %}<tr><td><span class="batch-code">{{ batch.batch_code }}</span></td><td>{{ batch.item.name }}</td><td>{{ batch.expiry_date }}</td><td>{{ batch.quantity_produced }}</td></tr>{% empty %}<tr><td colspan="4"><div class="empty-state"><span class="empty-mark">✓</span><span><strong>No upcoming expirations</strong><small>There are no batches nearing expiry.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
+  </section>
+</div>
+{% endblock %}

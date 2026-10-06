@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Returns Report | Allegderly{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h2>Returns Report</h2><a class="btn btn-outline-primary" href="?{{ export_query }}">Export CSV</a></div>
+<form method="get" class="row g-2 align-items-end mb-3">
+  <div class="col-sm-4"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div><div class="col-sm-4"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
+  <div class="col-auto"><button class="btn btn-primary" type="submit">Filter</button></div><div class="col-auto"><a class="btn btn-outline-secondary" href="{% url 'reports:returns' %}">Clear</a></div>
+</form>
+<div class="row g-3 mb-4">
+  <div class="col-lg-6"><h5>Returned Quantity by Item</h5><div class="table-responsive"><table class="table table-hover bg-white"><thead class="table-dark"><tr><th>Item</th><th>Quantity</th></tr></thead><tbody>
+    {% for item, quantity in by_item.items %}<tr><td>{{ item }}</td><td>{{ quantity }}</td></tr>{% empty %}<tr><td colspan="2" class="text-muted">No item totals.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+  <div class="col-lg-6"><h5>Returned Quantity by Customer</h5><div class="table-responsive"><table class="table table-hover bg-white"><thead class="table-dark"><tr><th>Customer</th><th>Quantity</th></tr></thead><tbody>
+    {% for customer, quantity in by_customer.items %}<tr><td>{{ customer }}</td><td>{{ quantity }}</td></tr>{% empty %}<tr><td colspan="2" class="text-muted">No customer totals.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+</div>
+<div class="table-responsive"><table class="table table-hover bg-white">
+  <thead class="table-dark"><tr><th>Date</th><th>Item</th><th>Customer</th><th>Invoice</th><th>Quantity</th><th>Restockable</th><th>Note</th></tr></thead>
+  <tbody>{% for record in records %}<tr><td>{{ record.date_returned }}</td><td>{{ record.invoice_line.item.name }}</td><td>{{ record.invoice_line.invoice.customer.name }}</td><td>{{ record.invoice_line.invoice.invoice_number }}</td><td>{{ record.quantity }}</td><td>{{ record.is_restockable|yesno:"Yes,No" }}</td><td>{{ record.note|default:"-" }}</td></tr>
+  {% empty %}<tr><td colspan="7" class="text-muted">No returns found for this date range.</td></tr>{% endfor %}</tbody>
+</table></div>
+<a href="{% url 'reports:index' %}">Back to Reports</a>
+{% endblock %}

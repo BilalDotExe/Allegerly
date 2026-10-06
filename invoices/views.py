@@ -7,6 +7,8 @@ from .models import Invoice, CreditNote
 from .forms import InvoiceForm, InvoiceLineFormSet, PaymentForm, VoidInvoiceForm, MarkRefundedForm
 from .services import issue_invoice, void_invoice, record_payment, apply_credit
 from audit.services import log as audit_log
+from reports.forms import DateRangeForm
+from reports.utils import export_csv
 
 
 def _pagination_query(request):
@@ -18,8 +20,33 @@ def _pagination_query(request):
 @login_required
 def invoice_list(request):
     invoices = Invoice.objects.select_related("customer").order_by("-created_at")
+    form = DateRangeForm(request.GET or None)
+    if form.is_valid():
+        start_date = form.cleaned_data.get("start_date")
+        end_date = form.cleaned_data.get("end_date")
+        if start_date:
+            invoices = invoices.filter(issue_date__gte=start_date)
+        if end_date:
+            invoices = invoices.filter(issue_date__lte=end_date)
+
+    export_params = request.GET.copy()
+    export_params["export"] = "csv"
+    export_query = export_params.urlencode()
+    if request.GET.get("export") == "csv":
+        return export_csv(
+            "invoices.csv",
+            ["Invoice Number", "Customer", "Status", "Issue Date", "Total", "Balance Due"],
+            [[inv.invoice_number, inv.customer.name, inv.get_status_display(),
+              inv.issue_date, inv.total, inv.balance_due] for inv in invoices],
+        )
+
     page_obj = Paginator(invoices, 25).get_page(request.GET.get("page"))
-    return render(request, "invoices/list.html", {"page_obj": page_obj, "pagination_query": _pagination_query(request)})
+    return render(request, "invoices/list.html", {
+        "page_obj": page_obj,
+        "pagination_query": _pagination_query(request),
+        "form": form,
+        "export_query": export_query,
+    })
 
 
 @login_required
@@ -107,8 +134,30 @@ def payment_create(request, pk):
 @login_required
 def credit_list(request):
     credits = CreditNote.objects.select_related("customer", "invoice").order_by("-created_at")
+    export_params = request.GET.copy()
+    export_params["export"] = "csv"
+    export_query = export_params.urlencode()
+    if request.GET.get("export") == "csv":
+        return export_csv(
+            "credit_notes.csv",
+            ["Credit #", "Customer", "Invoice", "Amount", "Remaining", "Status", "Date"],
+            [[
+                credit.credit_number,
+                credit.customer.name,
+                credit.invoice.invoice_number,
+                credit.amount,
+                credit.remaining_amount,
+                "Refunded" if credit.is_refunded else "Fully applied" if credit.is_applied else "Available",
+                credit.created_at.strftime("%Y-%m-%d"),
+            ] for credit in credits],
+        )
+
     page_obj = Paginator(credits, 25).get_page(request.GET.get("page"))
-    return render(request, "invoices/credit_list.html", {"page_obj": page_obj, "pagination_query": _pagination_query(request)})
+    return render(request, "invoices/credit_list.html", {
+        "page_obj": page_obj,
+        "pagination_query": _pagination_query(request),
+        "export_query": export_query,
+    })
 
 
 @login_required

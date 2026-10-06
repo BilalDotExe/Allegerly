@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Expiry Report | Allegderly{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h2>Expiry Report</h2><a class="btn btn-outline-primary" href="?{{ export_query }}">Export CSV</a></div>
+<form method="get" class="row g-2 align-items-end mb-3">
+  <div class="col-sm-4"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div><div class="col-sm-4"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
+  <div class="col-auto"><button class="btn btn-primary" type="submit">Filter</button></div><div class="col-auto"><a class="btn btn-outline-secondary" href="{% url 'reports:expiry' %}">Clear</a></div>
+</form>
+<div class="row g-3 mb-3"><div class="col-sm-6"><div class="card card-body">Total quantity written off: <strong>{{ total_qty }}</strong></div></div><div class="col-sm-6"><div class="card card-body">Total loss value: <strong>${{ total_loss_value }}</strong></div></div></div>
+<div class="table-responsive"><table class="table table-hover bg-white">
+  <thead class="table-dark"><tr><th>Date Noticed</th><th>Item SKU</th><th>Item Name</th><th>Quantity</th><th>Loss Value</th><th>Note</th><th>By</th></tr></thead>
+  <tbody>{% for record in records %}<tr><td>{{ record.date_noticed }}</td><td>{{ record.item.sku }}</td><td>{{ record.item.name }}</td><td>{{ record.quantity }}</td><td>${{ record.loss_value }}</td><td>{{ record.note|default:"-" }}</td><td>{{ record.created_by }}</td></tr>
+  {% empty %}<tr><td colspan="7" class="text-muted">No expiry write-offs found for this date range.</td></tr>{% endfor %}</tbody>
+</table></div>
+<a href="{% url 'reports:index' %}">Back to Reports</a>
+{% endblock %}

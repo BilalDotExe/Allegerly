@@ -3,12 +3,31 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Customer
 from .forms import CustomerForm
+from reports.utils import export_csv
 
 
 @login_required
 def customer_list(request):
     customers = Customer.objects.order_by("name")
-    return render(request, "customers/list.html", {"customers": customers})
+    export_params = request.GET.copy()
+    export_params["export"] = "csv"
+    export_query = export_params.urlencode()
+    if request.GET.get("export") == "csv":
+        return export_csv(
+            "customers.csv",
+            ["Name", "Phone", "Email", "Balance", "Status"],
+            [[
+                customer.name,
+                customer.phone,
+                customer.email,
+                customer.balance,
+                "Active" if customer.is_active else "Inactive",
+            ] for customer in customers],
+        )
+    return render(request, "customers/list.html", {
+        "customers": customers,
+        "export_query": export_query,
+    })
 
 
 @login_required

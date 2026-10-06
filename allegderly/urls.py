@@ -14,4 +14,5 @@ urlpatterns = [
     path("returns/", include("returns.urls")),
     path("production/", include("production.urls")),
     path("audit/", include("audit.urls")),
+    path("reports/", include("reports.urls")),
 ]

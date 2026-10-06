@@ -169,6 +169,7 @@ All reports have a date range filter and a **CSV export** button:
 ### Phase 8: Tests and security review
 
 - Unit tests for every business rule in section V (focus on rules 2, 5, 6, 7, 8, 9, 11, 12).
+- User permissions
 - Permission tests: ViewOnly cannot POST anywhere, Staff cannot void or adjust stock, Admin can do everything.
 - Run `python manage.py check --deploy` with `DEBUG=False` and resolve every issue it reports.
 - Audit every view: login required, correct permission checked, CSRF present, no raw SQL with string formatting, all input goes through Django forms.

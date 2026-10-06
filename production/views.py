@@ -7,15 +7,38 @@ from django.shortcuts import redirect, render
 from .forms import ProductionBatchForm
 from .models import ProductionBatch
 from .services import create_production_batch
+from reports.utils import export_csv
 
 
 @login_required
 def production_list(request):
     batches = ProductionBatch.objects.select_related("item", "created_by").order_by("-production_date", "-created_at")
+    export_params = request.GET.copy()
+    export_params["export"] = "csv"
+    export_query = export_params.urlencode()
+    if request.GET.get("export") == "csv":
+        return export_csv(
+            "production_batches.csv",
+            ["Batch", "Item", "Quantity", "Production Date", "Expiry Date", "Note", "By"],
+            [[
+                batch.batch_code,
+                batch.item.name,
+                batch.quantity_produced,
+                batch.production_date,
+                batch.expiry_date,
+                batch.note,
+                batch.created_by,
+            ] for batch in batches],
+        )
+
     page_obj = Paginator(batches, 25).get_page(request.GET.get("page"))
     query = request.GET.copy()
     query.pop("page", None)
-    return render(request, "production/list.html", {"page_obj": page_obj, "pagination_query": query.urlencode()})
+    return render(request, "production/list.html", {
+        "page_obj": page_obj,
+        "pagination_query": query.urlencode(),
+        "export_query": export_query,
+    })
 
 
 @login_required

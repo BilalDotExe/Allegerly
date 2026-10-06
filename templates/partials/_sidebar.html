@@ -1,50 +1,19 @@
-<nav class="col-md-2 d-none d-md-block bg-white sidebar border-end">
-  <div class="position-sticky pt-3">
-    <ul class="nav flex-column">
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'customers:list' %}">Customers</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'inventory:list' %}">Items</a>
-      </li>
+<aside class="app-sidebar d-none d-lg-flex">
+  <a class="sidebar-brand" href="{% url 'dashboard' %}">
+    <span class="brand-mark">A</span>
+    <span><strong>Allegderly</strong><small>Operations</small></span>
+  </a>
+  <div class="sidebar-caption">WORKSPACE</div>
+  {% include "partials/_nav_links.html" %}
+  <div class="sidebar-footer"><span class="status-dot"></span> Inventory workspace</div>
+</aside>
 
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'invoices:list' %}">Invoices</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'invoices:credit_list' %}">Credit Notes</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'damages:list' %}">Damage Reports</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'returns:list' %}">Returns</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'production:list' %}">Production Batches</a>
-      </li>
-      {% if perms.audit.view_auditlog %}
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'audit:list' %}">Audit Log</a>
-        </li>
-      {% endif %}
-
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'inventory:movements' %}">Stock Movements</a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'inventory:expiry_list' %}">Expiry Write-offs</a>
-      </li>
-
-      {% if perms.inventory.add_stockmovement %}
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'inventory:adjust' %}">Stock Adjustment</a>
-        </li>
-      {% endif %}
-    </ul>
+<div class="offcanvas offcanvas-start mobile-sidebar" tabindex="-1" id="mobileNavigation" aria-labelledby="mobileNavigationLabel">
+  <div class="offcanvas-header">
+    <a class="sidebar-brand" href="{% url 'dashboard' %}" id="mobileNavigationLabel">
+      <span class="brand-mark">A</span><span><strong>Allegderly</strong><small>Operations</small></span>
+    </a>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
-</nav>
+  <div class="offcanvas-body pt-2"><div class="sidebar-caption">WORKSPACE</div>{% include "partials/_nav_links.html" %}</div>
+</div>

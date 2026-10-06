@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Sales Report | Allegderly{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Sales Report</h2>
+  <a class="btn btn-outline-primary" href="?{{ export_query }}">Export CSV</a>
+</div>
+<form method="get" class="row g-2 align-items-end mb-3">
+  <div class="col-sm-4"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div>
+  <div class="col-sm-4"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
+  <div class="col-auto"><button class="btn btn-primary" type="submit">Filter</button></div>
+  <div class="col-auto"><a class="btn btn-outline-secondary" href="{% url 'reports:sales' %}">Clear</a></div>
+</form>
+<div class="alert alert-light border">Total revenue: <strong>${{ total_revenue }}</strong></div>
+<div class="table-responsive"><table class="table table-hover bg-white">
+  <thead class="table-dark"><tr><th>Invoice Number</th><th>Customer</th><th>Issue Date</th><th>Subtotal</th><th>Tax</th><th>Total</th></tr></thead>
+  <tbody>{% for invoice in invoices %}
+    <tr><td>{{ invoice.invoice_number }}</td><td>{{ invoice.customer.name }}</td><td>{{ invoice.issue_date|default:"-" }}</td><td>${{ invoice.report_subtotal }}</td><td>${{ invoice.tax_amount }}</td><td>${{ invoice.total }}</td></tr>
+  {% empty %}<tr><td colspan="6" class="text-muted">No sales found for this date range.</td></tr>{% endfor %}</tbody>
+</table></div>
+<a href="{% url 'reports:index' %}">Back to Reports</a>
+{% endblock %}

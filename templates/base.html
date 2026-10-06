@@ -6,21 +6,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Allegderly{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
   {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-light">
+<body>
 
   {% include "partials/_navbar.html" %}
 
-  <div class="container-fluid">
-    <div class="row">
+  <div class="app-layout">
       {% include "partials/_sidebar.html" %}
-
-      <main class="col-md-10 ms-sm-auto px-4 py-4">
+      <main class="app-main">
         {% include "partials/_alerts.html" %}
         {% block content %}{% endblock %}
       </main>
-    </div>
   </div>
 
   <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Damages Report | Allegderly{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h2>Damages Report</h2><a class="btn btn-outline-primary" href="?{{ export_query }}">Export CSV</a></div>
+<form method="get" class="row g-2 align-items-end mb-3">
+  <div class="col-sm-4"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div><div class="col-sm-4"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
+  <div class="col-auto"><button class="btn btn-primary" type="submit">Filter</button></div><div class="col-auto"><a class="btn btn-outline-secondary" href="{% url 'reports:damages' %}">Clear</a></div>
+</form>
+<h5>Summary by Item</h5><div class="table-responsive"><table class="table table-hover bg-white">
+  <thead class="table-dark"><tr><th>Item</th><th>Reports</th><th>Total Quantity</th><th>Total Loss</th></tr></thead>
+  <tbody>{% for item, values in summary.items %}<tr><td>{{ item.sku }} — {{ item.name }}</td><td>{{ values.count }}</td><td>{{ values.total_qty }}</td><td>${{ values.total_loss }}</td></tr>
+  {% empty %}<tr><td colspan="4" class="text-muted">No damage summary available.</td></tr>{% endfor %}</tbody>
+</table></div>
+<h5 class="mt-4">Damage Records</h5><div class="table-responsive"><table class="table table-hover bg-white">
+  <thead class="table-dark"><tr><th>Date</th><th>Item SKU</th><th>Item Name</th><th>Quantity</th><th>Loss Value</th><th>Note</th><th>Reported By</th></tr></thead>
+  <tbody>{% for record in records %}<tr><td>{{ record.date_reported }}</td><td>{{ record.item.sku }}</td><td>{{ record.item.name }}</td><td>{{ record.quantity }}</td><td>${{ record.loss_value }}</td><td>{{ record.note|default:"-" }}</td><td>{{ record.created_by }}</td></tr>
+  {% empty %}<tr><td colspan="7" class="text-muted">No damage reports found for this date range.</td></tr>{% endfor %}</tbody>
+</table></div>
+<a href="{% url 'reports:index' %}">Back to Reports</a>
+{% endblock %}

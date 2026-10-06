@@ -3,7 +3,10 @@
 {% block title %}Stock Movements | Allegderly{% endblock %}
 
 {% block content %}
-<h2>Stock Movements</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Stock Movements</h2>
+  <a href="?{{ export_query }}" class="btn btn-outline-primary">Export CSV</a>
+</div>
 
 <table class="table table-sm bg-white mt-3">
   <thead class="table-dark">

@@ -3,6 +3,8 @@ from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.utils.dateparse import parse_date
 
+from reports.utils import export_csv
+
 from .models import AuditLog
 
 
@@ -21,6 +23,24 @@ def audit_list(request):
         logs = logs.filter(timestamp__date__gte=parsed_from)
     if parsed_to:
         logs = logs.filter(timestamp__date__lte=parsed_to)
+
+    export_params = request.GET.copy()
+    export_params["export"] = "csv"
+    export_query = export_params.urlencode()
+    if request.GET.get("export") == "csv":
+        return export_csv(
+            "audit_log.csv",
+            ["Timestamp", "User", "Action", "Object", "Changes", "IP"],
+            [[
+                entry.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                entry.user or "-",
+                entry.action,
+                f"{entry.object_type} #{entry.object_id}\n{entry.object_repr}",
+                entry.changes or "-",
+                entry.ip_address or "-",
+            ] for entry in logs],
+        )
+
     page_obj = Paginator(logs, 50).get_page(request.GET.get("page"))
     actions = AuditLog.objects.order_by("action").values_list("action", flat=True).distinct()
     query = request.GET.copy()
@@ -32,4 +52,5 @@ def audit_list(request):
         "date_from": date_from,
         "date_to": date_to,
         "pagination_query": query.urlencode(),
+        "export_query": export_query,
     })

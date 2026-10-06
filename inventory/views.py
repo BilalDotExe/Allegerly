@@ -4,12 +4,32 @@ from django.contrib import messages
 from .models import Item, StockMovement, ExpiryWriteOff
 from .forms import ItemForm, ExpiryWriteOffForm, StockAdjustmentForm
 from inventory.services import adjust_stock
+from reports.utils import export_csv
 
 
 @login_required
 def item_list(request):
     items = Item.objects.order_by("name")
-    return render(request, "inventory/list.html", {"items": items})
+    export_params = request.GET.copy()
+    export_params["export"] = "csv"
+    export_query = export_params.urlencode()
+    if request.GET.get("export") == "csv":
+        return export_csv(
+            "items.csv",
+            ["SKU", "Name", "Cost Price", "Sale Price", "Stock", "Reorder Level"],
+            [[
+                item.sku,
+                item.name,
+                item.cost_price,
+                item.sale_price,
+                item.current_stock(),
+                item.reorder_level,
+            ] for item in items],
+        )
+    return render(request, "inventory/list.html", {
+        "items": items,
+        "export_query": export_query,
+    })
 
 
 @login_required
@@ -43,13 +63,51 @@ def item_edit(request, pk):
 @login_required
 def movements_list(request):
     movements = StockMovement.objects.select_related("item", "created_by").order_by("-created_at")[:200]
-    return render(request, "inventory/movements.html", {"movements": movements})
+    export_params = request.GET.copy()
+    export_params["export"] = "csv"
+    export_query = export_params.urlencode()
+    if request.GET.get("export") == "csv":
+        return export_csv(
+            "stock_movements.csv",
+            ["Date", "Item SKU", "Type", "Quantity", "Note", "By"],
+            [[
+                movement.created_at.strftime("%Y-%m-%d %H:%M"),
+                movement.item.sku,
+                movement.get_movement_type_display(),
+                movement.quantity,
+                movement.note,
+                movement.created_by,
+            ] for movement in movements],
+        )
+    return render(request, "inventory/movements.html", {
+        "movements": movements,
+        "export_query": export_query,
+    })
 
 
 @login_required
 def expiry_list(request):
     writeoffs = ExpiryWriteOff.objects.select_related("item", "created_by").order_by("-created_at")
-    return render(request, "inventory/expiry_list.html", {"writeoffs": writeoffs})
+    export_params = request.GET.copy()
+    export_params["export"] = "csv"
+    export_query = export_params.urlencode()
+    if request.GET.get("export") == "csv":
+        return export_csv(
+            "expiry_writeoffs.csv",
+            ["Date Noticed", "Item", "Quantity", "Loss Value", "Note", "By"],
+            [[
+                writeoff.date_noticed,
+                writeoff.item.sku,
+                writeoff.quantity,
+                writeoff.loss_value,
+                writeoff.note,
+                writeoff.created_by,
+            ] for writeoff in writeoffs],
+        )
+    return render(request, "inventory/expiry_list.html", {
+        "writeoffs": writeoffs,
+        "export_query": export_query,
+    })
 
 
 @login_required

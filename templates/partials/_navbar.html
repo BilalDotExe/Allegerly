@@ -1,12 +1,7 @@
-<nav class="navbar navbar-dark bg-dark px-3">
-  <span class="navbar-brand mb-0 h1">Allegderly</span>
+<header class="topbar">
+  <button class="mobile-menu btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNavigation" aria-controls="mobileNavigation" aria-label="Open navigation"><span></span><span></span><span></span></button>
+  <div class="topbar-context"><span class="context-label">WORKSPACE</span><span class="context-separator">/</span><span>{% if request.resolver_match.url_name == 'dashboard' %}Overview{% elif request.resolver_match.namespace %}{{ request.resolver_match.namespace|title }}{% else %}Workspace{% endif %}</span></div>
   {% if user.is_authenticated %}
-    <div class="d-flex align-items-center">
-      <span class="text-light me-3">{{ user.username }}</span>
-      <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button class="btn btn-outline-light btn-sm" type="submit">Log out</button>
-      </form>
-    </div>
+  <div class="topbar-account"><span class="account-avatar">{{ user.username|first|upper }}</span><span class="account-name">{{ user.username }}</span><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="logout-button" type="submit">Log out</button></form></div>
   {% endif %}
-</nav>
+</header>

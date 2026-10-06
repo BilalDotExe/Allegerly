@@ -1,8 +1,43 @@
 {% extends "base.html" %}
 {% block title %}Invoices | Allegderly{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3"><h2>Invoices</h2><a class="btn btn-primary" href="{% url 'invoices:create' %}">Add Invoice</a></div>
-<table class="table table-hover bg-white"><thead class="table-dark"><tr><th>Number</th><th>Customer</th><th>Status</th><th>Issue Date</th><th>Due Date</th><th>Total</th><th>Balance Due</th></tr></thead><tbody>
-{% for invoice in page_obj %}<tr><td><a href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td><td>{{ invoice.customer.name }}</td><td><span class="badge {% if invoice.status == 'paid' %}bg-success{% elif invoice.status == 'issued' %}bg-primary{% elif invoice.status == 'voided' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">{{ invoice.get_status_display }}</span>{% if invoice.return_status %}<span class="badge bg-info text-dark">{{ invoice.return_status }}</span>{% endif %}</td><td>{{ invoice.issue_date|default:"-" }}</td><td>{{ invoice.due_date|default:"-" }}</td><td>${{ invoice.total }}</td><td>${{ invoice.balance_due }}</td></tr>{% empty %}<tr><td colspan="7" class="text-muted">No invoices yet.</td></tr>{% endfor %}
-</tbody></table>{% include "partials/_pagination.html" %}
+<div class="page-heading invoice-page-heading">
+  <div><div class="eyebrow">BILLING</div><h1>Invoices</h1><p class="page-subtitle">Review customer balances and keep billing on track.</p></div>
+  <div class="invoice-actions">
+    <a class="btn btn-outline-primary invoice-export-button" href="?{{ export_query }}"><span aria-hidden="true">↓</span> Export CSV</a>
+    <a class="btn btn-primary app-primary-button" href="{% url 'invoices:create' %}"><span aria-hidden="true">＋</span> Add Invoice</a>
+  </div>
+</div>
+
+<section class="invoice-filter-panel" aria-label="Filter invoices">
+  <div class="filter-heading"><div><h2>Find invoices</h2><p>Choose a date range to narrow the list.</p></div></div>
+  <form method="get" class="invoice-filter-form">
+    <div class="filter-field"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div>
+    <div class="filter-field"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
+    <div class="filter-actions"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{% url 'invoices:list' %}">Clear</a></div>
+  </form>
+</section>
+
+<section class="invoice-table-panel" aria-label="Invoice list">
+  <div class="invoice-table-heading"><div><h2>All invoices</h2><p>Invoice details and current balances</p></div></div>
+  <div class="table-responsive"><table class="table invoice-table">
+    <thead><tr><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col">Status</th><th scope="col">Issue date</th><th scope="col">Due date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th></tr></thead>
+    <tbody>
+      {% for invoice in page_obj %}
+      <tr>
+        <td><a class="table-primary-link invoice-number" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td>
+        <td class="invoice-customer">{{ invoice.customer.name }}</td>
+        <td><div class="invoice-status-group"><span class="invoice-status invoice-status-{{ invoice.status }}">{{ invoice.get_status_display }}</span>{% if invoice.return_status %}<span class="invoice-status invoice-status-return">{{ invoice.return_status }}</span>{% endif %}</div></td>
+        <td class="invoice-date">{{ invoice.issue_date|default:"-" }}</td>
+        <td class="invoice-date">{{ invoice.due_date|default:"-" }}</td>
+        <td class="text-end invoice-money">${{ invoice.total }}</td>
+        <td class="text-end invoice-balance">${{ invoice.balance_due }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7"><div class="invoice-empty-state"><span class="empty-mark">⌕</span><span><strong>No invoices found</strong><small>Try a different date range or create a new invoice.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% include "partials/_pagination.html" %}
 {% endblock %}
