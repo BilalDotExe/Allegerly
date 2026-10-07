@@ -1,20 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Returns | Allegderly{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>Returns</h2>
-  <div class="d-flex gap-2"><a class="btn btn-outline-primary" href="?{{ export_query }}">Export CSV</a><a href="{% url 'returns:create' %}" class="btn btn-primary">Add Return</a></div>
-</div>
-<form method="get" class="row g-2 align-items-end mb-3">
-  <div class="col-sm-4"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div>
-  <div class="col-sm-4"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
-  <div class="col-auto"><button class="btn btn-primary" type="submit">Filter</button></div>
-  <div class="col-auto"><a class="btn btn-outline-secondary" href="{% url 'returns:list' %}">Clear</a></div>
-</form>
-<div class="table-responsive"><table class="table table-hover bg-white">
-  <thead class="table-dark"><tr><th>Date</th><th>Invoice</th><th>Customer</th><th>Item</th><th>Quantity</th><th>Restocked</th><th>Credit Note</th><th>By</th></tr></thead>
-  <tbody>{% for record in page_obj %}<tr><td>{{ record.date_returned }}</td><td>{{ record.invoice_line.invoice.invoice_number }}</td><td>{{ record.invoice_line.invoice.customer.name }}</td><td>{{ record.invoice_line.item.name }}</td><td>{{ record.quantity }}</td><td>{{ record.is_restockable|yesno:"Yes,No" }}</td><td><a href="{% url 'invoices:credit_detail' record.credit_note.pk %}">{{ record.credit_note.credit_number }}</a></td><td>{{ record.created_by }}</td></tr>
-  {% empty %}<tr><td colspan="8" class="text-muted">No returns yet.</td></tr>{% endfor %}</tbody>
-</table></div>
+{% url 'returns:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="OPERATIONS" title="Returns" subtitle="Items returned against invoices." add_url=add_url add_label="Add Return" %}
+{% url 'returns:list' as clear_url %}{% include "partials/_date_filter.html" with clear_url=clear_url filter_title="Find returns" %}
+
+<section class="table-panel" aria-label="All returns">
+  <div class="table-heading"><div><h2>All returns</h2><p>Returned items and credit notes</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Date</th><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col">Restocked</th><th scope="col">Credit note</th><th scope="col">By</th></tr></thead>
+    <tbody>
+      {% for record in page_obj %}
+      <tr><td class="cell-date">{{ record.date_returned }}</td><td class="cell-link">{{ record.invoice_line.invoice.invoice_number }}</td><td class="cell-strong">{{ record.invoice_line.invoice.customer.name }}</td><td>{{ record.invoice_line.item.name }}</td><td class="text-end cell-money">{{ record.quantity }}</td><td><span class="status-pill {% if record.is_restockable %}status-pill-active{% else %}status-pill-inactive{% endif %}">{{ record.is_restockable|yesno:"Yes,No" }}</span></td><td><a class="table-primary-link cell-link" href="{% url 'invoices:credit_detail' record.credit_note.pk %}">{{ record.credit_note.credit_number }}</a></td><td>{{ record.created_by }}</td></tr>
+      {% empty %}
+      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No returns found</strong><small>Try a different date range or add a return.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
 {% include "partials/_pagination.html" %}
 {% endblock %}

@@ -1,37 +1,18 @@
 {% extends "base.html" %}
-
 {% block title %}Stock Movements | Allegderly{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>Stock Movements</h2>
-  <a href="?{{ export_query }}" class="btn btn-outline-primary">Export CSV</a>
-</div>
-
-<table class="table table-sm bg-white mt-3">
-  <thead class="table-dark">
-    <tr>
-      <th>Date</th>
-      <th>Item</th>
-      <th>Type</th>
-      <th>Quantity</th>
-      <th>Note</th>
-      <th>By</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for movement in movements %}
-    <tr>
-      <td>{{ movement.created_at|date:"Y-m-d H:i" }}</td>
-      <td><a href="{% url 'inventory:detail' movement.item.pk %}">{{ movement.item.sku }}</a></td>
-      <td>{{ movement.get_movement_type_display }}</td>
-      <td>{{ movement.quantity }}</td>
-      <td>{{ movement.note|default:"-" }}</td>
-      <td>{{ movement.created_by }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="6" class="text-muted">No movements yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+{% include "partials/_page_heading.html" with eyebrow="INVENTORY" title="Stock Movements" subtitle="Every change to stock levels." %}
+<section class="table-panel" aria-label="All movements">
+  <div class="table-heading"><div><h2>All movements</h2><p>Stock in, out and adjustments</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Date</th><th scope="col">Item</th><th scope="col">Type</th><th scope="col" class="text-end">Quantity</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
+    <tbody>
+      {% for movement in movements %}
+      <tr><td class="cell-date">{{ movement.created_at|date:"Y-m-d H:i" }}</td><td><a class="table-primary-link cell-link" href="{% url 'inventory:detail' movement.item.pk %}">{{ movement.item.sku }}</a></td><td>{{ movement.get_movement_type_display }}</td><td class="text-end cell-money">{{ movement.quantity }}</td><td class="cell-note">{{ movement.note|default:"-" }}</td><td>{{ movement.created_by }}</td></tr>
+      {% empty %}
+      <tr><td colspan="6"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No movements found</strong><small>Movements appear as stock changes.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
 {% endblock %}
