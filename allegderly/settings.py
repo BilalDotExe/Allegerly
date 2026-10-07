@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 from django.contrib.messages import constants as messages
 
-load_dotenv()
+load_dotenv(override=True)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

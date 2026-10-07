@@ -2,8 +2,10 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import DecimalField, ExpressionWrapper, F, Sum, Value
 from django.db.models.functions import Coalesce
-
 from core.money import money, zero_money
+from decimal import Decimal
+
+_ZERO = Value(Decimal('0.00'), output_field=DecimalField(max_digits=14, decimal_places=4))
 
 
 # Issued + paid invoices count as billed (draft/voided do not).
@@ -38,7 +40,7 @@ class Customer(models.Model):
             InvoiceLine.objects.filter(
                 invoice__customer=self,
                 invoice__status__in=_BILLED_STATUSES,
-            ).aggregate(total=Coalesce(Sum(_LINE_WITH_TAX), Value(0)))
+            ).aggregate(total=Coalesce(Sum(_LINE_WITH_TAX), _ZERO))
         )
 
     def total_paid(self):
@@ -50,7 +52,7 @@ class Customer(models.Model):
                 invoice__customer=self,
                 invoice__status__in=_BILLED_STATUSES,
                 is_voided=False,
-            ).aggregate(total=Coalesce(Sum('amount'), Value(0)))
+            ).aggregate(total=Coalesce(Sum('amount'), _ZERO))
         )
 
     def credits_applied(self):
@@ -61,7 +63,7 @@ class Customer(models.Model):
             CreditApplication.objects.filter(
                 credit_note__customer=self,
                 invoice__status__in=_BILLED_STATUSES,
-            ).aggregate(total=Coalesce(Sum('amount'), Value(0)))
+            ).aggregate(total=Coalesce(Sum('amount'), _ZERO))
         )
 
     def outstanding_balance(self):
@@ -77,7 +79,7 @@ class Customer(models.Model):
                 is_refunded=False,
             ).filter(
                 remaining_amount__gt=0,
-            ).aggregate(total=Coalesce(Sum('remaining_amount'), Value(0)))
+            ).aggregate(total=Coalesce(Sum('remaining_amount'), _ZERO))
         )
 
     def delete(self, *args, **kwargs):

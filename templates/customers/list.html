@@ -28,7 +28,7 @@
       <td><a href="{% url 'customers:detail' customer.pk %}">{{ customer.name }}</a></td>
       <td>{{ customer.phone|default:"-" }}</td>
       <td>{{ customer.email|default:"-" }}</td>
-      <td>${{ customer.balance }}</td>
+      <td>${{ customer.outstanding_balance }}</td>
       <td>
         {% if customer.is_active %}
           <span class="badge bg-success">Active</span>
