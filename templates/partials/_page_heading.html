@@ -1,0 +1,7 @@
+<div class="page-heading list-page-heading">
+  <div><div class="eyebrow">{{ eyebrow }}</div><h1>{{ title }}</h1><p class="page-subtitle">{{ subtitle }}</p></div>
+  <div class="page-actions">
+    {% if export_query is not None %}<a class="btn btn-outline-primary export-button" href="?{{ export_query }}"><span aria-hidden="true">↓</span> Export CSV</a>{% endif %}
+    {% if add_url %}<a class="btn btn-primary app-primary-button" href="{{ add_url }}"><span aria-hidden="true">＋</span> {{ add_label }}</a>{% endif %}
+  </div>
+</div>

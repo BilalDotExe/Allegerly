@@ -1,0 +1,8 @@
+<section class="filter-panel" aria-label="Filter">
+  <div class="filter-heading"><div><h2>{{ filter_title|default:"Filter results" }}</h2><p>Choose a date range to narrow the list.</p></div></div>
+  <form method="get" class="filter-form">
+    <div class="filter-field"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div>
+    <div class="filter-field"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
+    <div class="filter-actions"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{{ clear_url }}">Clear</a></div>
+  </form>
+</section>

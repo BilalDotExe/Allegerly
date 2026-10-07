@@ -1,40 +1,40 @@
 {% extends "base.html" %}
 {% block title %}Invoices | Allegderly{% endblock %}
 {% block content %}
-<div class="page-heading invoice-page-heading">
+<div class="page-heading list-page-heading">
   <div><div class="eyebrow">BILLING</div><h1>Invoices</h1><p class="page-subtitle">Review customer balances and keep billing on track.</p></div>
-  <div class="invoice-actions">
-    <a class="btn btn-outline-primary invoice-export-button" href="?{{ export_query }}"><span aria-hidden="true">↓</span> Export CSV</a>
+  <div class="page-actions">
+    <a class="btn btn-outline-primary export-button" href="?{{ export_query }}"><span aria-hidden="true">↓</span> Export CSV</a>
     <a class="btn btn-primary app-primary-button" href="{% url 'invoices:create' %}"><span aria-hidden="true">＋</span> Add Invoice</a>
   </div>
 </div>
 
-<section class="invoice-filter-panel" aria-label="Filter invoices">
+<section class="filter-panel" aria-label="Filter invoices">
   <div class="filter-heading"><div><h2>Find invoices</h2><p>Choose a date range to narrow the list.</p></div></div>
-  <form method="get" class="invoice-filter-form">
+  <form method="get" class="filter-form">
     <div class="filter-field"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div>
     <div class="filter-field"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
     <div class="filter-actions"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" href="{% url 'invoices:list' %}">Clear</a></div>
   </form>
 </section>
 
-<section class="invoice-table-panel" aria-label="Invoice list">
-  <div class="invoice-table-heading"><div><h2>All invoices</h2><p>Invoice details and current balances</p></div></div>
-  <div class="table-responsive"><table class="table invoice-table">
+<section class="table-panel" aria-label="Invoice list">
+  <div class="table-heading"><div><h2>All invoices</h2><p>Invoice details and current balances</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
     <thead><tr><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col">Status</th><th scope="col">Issue date</th><th scope="col">Due date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th></tr></thead>
     <tbody>
       {% for invoice in page_obj %}
       <tr>
-        <td><a class="table-primary-link invoice-number" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td>
-        <td class="invoice-customer">{{ invoice.customer.name }}</td>
-        <td><div class="invoice-status-group"><span class="invoice-status invoice-status-{{ invoice.status }}">{{ invoice.get_status_display }}</span>{% if invoice.return_status %}<span class="invoice-status invoice-status-return">{{ invoice.return_status }}</span>{% endif %}</div></td>
-        <td class="invoice-date">{{ invoice.issue_date|default:"-" }}</td>
-        <td class="invoice-date">{{ invoice.due_date|default:"-" }}</td>
-        <td class="text-end invoice-money">${{ invoice.total }}</td>
-        <td class="text-end invoice-balance">${{ invoice.balance_due }}</td>
+        <td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td>
+        <td class="cell-strong">{{ invoice.customer.name }}</td>
+        <td><div class="status-group"><span class="status-pill status-pill-{{ invoice.status }}">{{ invoice.get_status_display }}</span>{% if invoice.return_status %}<span class="status-pill status-pill-return">{{ invoice.return_status }}</span>{% endif %}</div></td>
+        <td class="cell-date">{{ invoice.issue_date|default:"-" }}</td>
+        <td class="cell-date">{{ invoice.due_date|default:"-" }}</td>
+        <td class="text-end cell-money">${{ invoice.total }}</td>
+        <td class="text-end cell-balance">${{ invoice.balance_due }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="7"><div class="invoice-empty-state"><span class="empty-mark">⌕</span><span><strong>No invoices found</strong><small>Try a different date range or create a new invoice.</small></span></div></td></tr>
+      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No invoices found</strong><small>Try a different date range or create a new invoice.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

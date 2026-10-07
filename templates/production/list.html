@@ -1,1 +1,19 @@
-{% extends "base.html" %}{% block title %}Production Batches | Allegderly{% endblock %}{% block content %}<div class="d-flex justify-content-between align-items-center mb-3"><h2>Production Batches</h2><div class="d-flex gap-2"><a href="?{{ export_query }}" class="btn btn-outline-primary">Export CSV</a><a href="{% url 'production:create' %}" class="btn btn-primary">Add Production Batch</a></div></div><table class="table table-hover bg-white"><thead class="table-dark"><tr><th>Batch</th><th>Item</th><th>Quantity</th><th>Production Date</th><th>Expiry Date</th><th>Note</th><th>By</th></tr></thead><tbody>{% for batch in page_obj %}<tr><td>{{ batch.batch_code }}</td><td>{{ batch.item.name }}</td><td>{{ batch.quantity_produced }}</td><td>{{ batch.production_date }}</td><td>{{ batch.expiry_date|default:"-" }}</td><td>{{ batch.note|default:"-" }}</td><td>{{ batch.created_by }}</td></tr>{% empty %}<tr><td colspan="7" class="text-muted">No production batches yet.</td></tr>{% endfor %}</tbody></table>{% include "partials/_pagination.html" %}{% endblock %}
+{% extends "base.html" %}
+{% block title %}Production Batches | Allegderly{% endblock %}
+{% block content %}
+{% url 'production:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="OPERATIONS" title="Production Batches" subtitle="Batches produced and their expiry dates." add_url=add_url add_label="Add Production Batch" %}
+<section class="table-panel" aria-label="All batches">
+  <div class="table-heading"><div><h2>All batches</h2><p>Production history</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Batch</th><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col">Production date</th><th scope="col">Expiry date</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
+    <tbody>
+      {% for batch in page_obj %}
+      <tr><td class="cell-link">{{ batch.batch_code }}</td><td class="cell-strong">{{ batch.item.name }}</td><td class="text-end cell-money">{{ batch.quantity_produced }}</td><td class="cell-date">{{ batch.production_date }}</td><td class="cell-date">{{ batch.expiry_date|default:"-" }}</td><td class="cell-note">{{ batch.note|default:"-" }}</td><td>{{ batch.created_by }}</td></tr>
+      {% empty %}
+      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No production batches found</strong><small>Add a batch to get started.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% include "partials/_pagination.html" %}
+{% endblock %}

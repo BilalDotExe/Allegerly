@@ -1,16 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Outstanding Invoices | Allegderly{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3"><h2>Outstanding Invoices</h2><a class="btn btn-outline-primary" href="?{{ export_query }}">Export CSV</a></div>
-<form method="get" class="row g-2 align-items-end mb-3">
-  <div class="col-sm-4"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div><div class="col-sm-4"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
-  <div class="col-auto"><button class="btn btn-primary" type="submit">Filter</button></div><div class="col-auto"><a class="btn btn-outline-secondary" href="{% url 'reports:outstanding' %}">Clear</a></div>
-</form>
-<div class="row g-2 mb-3">{% for label, count in buckets.items %}<div class="col-sm-6 col-lg-3"><div class="card card-body"><span>{{ label }}</span><strong>{{ count }}</strong></div></div>{% endfor %}</div>
-<div class="table-responsive"><table class="table table-hover bg-white">
-  <thead class="table-dark"><tr><th>Invoice Number</th><th>Customer</th><th>Issue Date</th><th>Due Date</th><th>Total</th><th>Balance Due</th><th>Days Overdue</th><th>Bucket</th></tr></thead>
-  <tbody>{% for invoice in invoices %}<tr><td>{{ invoice.invoice_number }}</td><td>{{ invoice.customer.name }}</td><td>{{ invoice.issue_date|default:"-" }}</td><td>{{ invoice.due_date|default:"-" }}</td><td>${{ invoice.total }}</td><td>${{ invoice.balance_due }}</td><td>{{ invoice.days_overdue|default_if_none:"-" }}</td><td>{{ invoice.bucket }}</td></tr>
-  {% empty %}<tr><td colspan="8" class="text-muted">No outstanding invoices found for this date range.</td></tr>{% endfor %}</tbody>
-</table></div>
-<a href="{% url 'reports:index' %}">Back to Reports</a>
+{% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Outstanding Invoices" subtitle="Unpaid invoices and how overdue they are." %}
+{% url 'reports:outstanding' as clear_url %}{% include "partials/_date_filter.html" with clear_url=clear_url %}
+
+<div class="summary-strip">{% for label, count in buckets.items %}<div class="summary-card"><span>{{ label }}</span><strong>{{ count }}</strong></div>{% endfor %}</div>
+<section class="table-panel" aria-label="Outstanding invoices">
+  <div class="table-heading"><div><h2>Outstanding invoices</h2><p>Balances still due</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col">Issue date</th><th scope="col">Due date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th><th scope="col" class="text-end">Days overdue</th><th scope="col">Bucket</th></tr></thead>
+    <tbody>
+      {% for invoice in invoices %}
+      <tr><td class="cell-link">{{ invoice.invoice_number }}</td><td class="cell-strong">{{ invoice.customer.name }}</td><td class="cell-date">{{ invoice.issue_date|default:"-" }}</td><td class="cell-date">{{ invoice.due_date|default:"-" }}</td><td class="text-end cell-money">${{ invoice.total }}</td><td class="text-end cell-balance">${{ invoice.balance_due }}</td><td class="text-end cell-money">{{ invoice.days_overdue|default_if_none:"-" }}</td><td>{{ invoice.bucket }}</td></tr>
+      {% empty %}
+      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No outstanding invoices found</strong><small>Try a different date range.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+<a class="page-back" href="{% url 'reports:index' %}">← Back to Reports</a>
 {% endblock %}

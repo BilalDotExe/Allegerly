@@ -1,16 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Production Report | Allegderly{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3"><h2>Production Report</h2><a class="btn btn-outline-primary" href="?{{ export_query }}">Export CSV</a></div>
-<form method="get" class="row g-2 align-items-end mb-3">
-  <div class="col-sm-4"><label class="form-label" for="id_start_date">Start date</label>{{ form.start_date }}</div><div class="col-sm-4"><label class="form-label" for="id_end_date">End date</label>{{ form.end_date }}</div>
-  <div class="col-auto"><button class="btn btn-primary" type="submit">Filter</button></div><div class="col-auto"><a class="btn btn-outline-secondary" href="{% url 'reports:production' %}">Clear</a></div>
-</form>
-<div class="alert alert-light border">Total produced: <strong>{{ total_produced }}</strong></div>
-<div class="table-responsive"><table class="table table-hover bg-white">
-  <thead class="table-dark"><tr><th>Batch Code</th><th>Item</th><th>Quantity Produced</th><th>Production Date</th><th>Expiry Date</th><th>Note</th><th>By</th></tr></thead>
-  <tbody>{% for record in records %}<tr><td>{{ record.batch_code }}</td><td>{{ record.item.name }}</td><td>{{ record.quantity_produced }}</td><td>{{ record.production_date }}</td><td>{{ record.expiry_date|default:"-" }}</td><td>{{ record.note|default:"-" }}</td><td>{{ record.created_by }}</td></tr>
-  {% empty %}<tr><td colspan="7" class="text-muted">No production batches found for this date range.</td></tr>{% endfor %}</tbody>
-</table></div>
-<a href="{% url 'reports:index' %}">Back to Reports</a>
+{% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Production Report" subtitle="Batches produced in the selected dates." %}
+{% url 'reports:production' as clear_url %}{% include "partials/_date_filter.html" with clear_url=clear_url %}
+
+<div class="summary-strip"><div class="summary-card"><span>Total produced</span><strong>{{ total_produced }}</strong></div></div>
+<section class="table-panel" aria-label="Production batches">
+  <div class="table-heading"><div><h2>Production batches</h2><p>Batches and expiry dates</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Batch code</th><th scope="col">Item</th><th scope="col" class="text-end">Quantity produced</th><th scope="col">Production date</th><th scope="col">Expiry date</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
+    <tbody>
+      {% for record in records %}
+      <tr><td class="cell-link">{{ record.batch_code }}</td><td class="cell-strong">{{ record.item.name }}</td><td class="text-end cell-money">{{ record.quantity_produced }}</td><td class="cell-date">{{ record.production_date }}</td><td class="cell-date">{{ record.expiry_date|default:"-" }}</td><td class="cell-note">{{ record.note|default:"-" }}</td><td>{{ record.created_by }}</td></tr>
+      {% empty %}
+      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No production batches found</strong><small>Try a different date range.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+<a class="page-back" href="{% url 'reports:index' %}">← Back to Reports</a>
 {% endblock %}

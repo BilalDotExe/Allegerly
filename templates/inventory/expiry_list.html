@@ -1,40 +1,18 @@
 {% extends "base.html" %}
-
 {% block title %}Expiry Write-offs | Allegderly{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>Expiry Write-offs</h2>
-  <div class="d-flex gap-2">
-    <a href="?{{ export_query }}" class="btn btn-outline-primary">Export CSV</a>
-    <a href="{% url 'inventory:expiry_create' %}" class="btn btn-primary">New Write-off</a>
-  </div>
-</div>
-
-<table class="table table-hover bg-white">
-  <thead class="table-dark">
-    <tr>
-      <th>Date Noticed</th>
-      <th>Item</th>
-      <th>Quantity</th>
-      <th>Loss Value</th>
-      <th>Note</th>
-      <th>By</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for writeoff in writeoffs %}
-    <tr>
-      <td>{{ writeoff.date_noticed }}</td>
-      <td><a href="{% url 'inventory:detail' writeoff.item.pk %}">{{ writeoff.item.sku }}</a></td>
-      <td>{{ writeoff.quantity }}</td>
-      <td>${{ writeoff.loss_value }}</td>
-      <td>{{ writeoff.note|default:"-" }}</td>
-      <td>{{ writeoff.created_by }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="6" class="text-muted">No write-offs yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+{% url 'inventory:expiry_create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="INVENTORY" title="Expiry Write-offs" subtitle="Stock written off after expiry." add_url=add_url add_label="New Write-off" %}
+<section class="table-panel" aria-label="All write-offs">
+  <div class="table-heading"><div><h2>All write-offs</h2><p>Expired items and their loss value</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Date noticed</th><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col" class="text-end">Loss value</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
+    <tbody>
+      {% for writeoff in writeoffs %}
+      <tr><td class="cell-date">{{ writeoff.date_noticed }}</td><td><a class="table-primary-link cell-link" href="{% url 'inventory:detail' writeoff.item.pk %}">{{ writeoff.item.sku }}</a></td><td class="text-end cell-money">{{ writeoff.quantity }}</td><td class="text-end cell-balance">${{ writeoff.loss_value }}</td><td class="cell-note">{{ writeoff.note|default:"-" }}</td><td>{{ writeoff.created_by }}</td></tr>
+      {% empty %}
+      <tr><td colspan="6"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No write-offs found</strong><small>Create a write-off when stock expires.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
 {% endblock %}
