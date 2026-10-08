@@ -1,17 +1,29 @@
 <nav class="side-nav" aria-label="Main navigation">
+  <div class="sidebar-caption">WORKSPACE</div>
   <a class="side-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="nav-glyph">⌂</span>Dashboard</a>
   <div class="nav-group-label">MANAGE</div>
+  {% if not is_employee %}
   <a class="side-link {% if request.resolver_match.namespace == 'customers' %}active{% endif %}" href="{% url 'customers:list' %}"><span class="nav-glyph">◎</span>Customers</a>
+  <a class="side-link {% if request.resolver_match.namespace == 'vendors' %}active{% endif %}" href="{% url 'vendors:list' %}"><span class="nav-glyph">⛉</span>Vendors</a>
+  {% endif %}
+  <a class="side-link {% if request.resolver_match.namespace == 'purchasing' %}active{% endif %}" href="{% url 'purchasing:list' %}"><span class="nav-glyph">⊞</span>Purchase Orders</a>
+  {% if not is_employee %}
   <a class="side-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name != 'movements' and request.resolver_match.url_name != 'expiry_list' and request.resolver_match.url_name != 'expiry_form' and request.resolver_match.url_name != 'adjust' %}active{% endif %}" href="{% url 'inventory:list' %}"><span class="nav-glyph">▤</span>Items</a>
+  {% endif %}
   <a class="side-link {% if request.resolver_match.namespace == 'invoices' and request.resolver_match.url_name != 'credit_list' and request.resolver_match.url_name != 'credit_detail' and request.resolver_match.url_name != 'credit_apply' and request.resolver_match.url_name != 'credit_refund' %}active{% endif %}" href="{% url 'invoices:list' %}"><span class="nav-glyph">▧</span>Invoices</a>
+  {% if not is_employee %}
+  <a class="side-link {% if request.resolver_match.namespace == 'production' %}active{% endif %}" href="{% url 'production:list' %}"><span class="nav-glyph">⚙</span>Production Batches</a>
+  {% endif %}
+  <div class="nav-group-label">RETURNS &amp; WRITE-OFFS</div>
+  <a class="side-link {% if request.resolver_match.namespace == 'returns' %}active{% endif %}" href="{% url 'returns:list' %}"><span class="nav-glyph">↩</span>Returns</a>
   <a class="side-link {% if request.resolver_match.url_name == 'credit_list' or request.resolver_match.url_name == 'credit_detail' or request.resolver_match.url_name == 'credit_apply' or request.resolver_match.url_name == 'credit_refund' %}active{% endif %}" href="{% url 'invoices:credit_list' %}"><span class="nav-glyph">↺</span>Credit Notes</a>
   <a class="side-link {% if request.resolver_match.namespace == 'damages' %}active{% endif %}" href="{% url 'damages:list' %}"><span class="nav-glyph">◇</span>Damage Reports</a>
-  <a class="side-link {% if request.resolver_match.namespace == 'returns' %}active{% endif %}" href="{% url 'returns:list' %}"><span class="nav-glyph">↩</span>Returns</a>
-  <a class="side-link {% if request.resolver_match.namespace == 'production' %}active{% endif %}" href="{% url 'production:list' %}"><span class="nav-glyph">⚙</span>Production Batches</a>
-  {% if perms.audit.view_auditlog %}<a class="side-link {% if request.resolver_match.namespace == 'audit' %}active{% endif %}" href="{% url 'audit:list' %}"><span class="nav-glyph">≡</span>Audit Log</a>{% endif %}
+  {% if not is_employee %}
+  <a class="side-link {% if request.resolver_match.url_name == 'expiry_list' or request.resolver_match.url_name == 'expiry_form' %}active{% endif %}" href="{% url 'inventory:expiry_list' %}"><span class="nav-glyph">◷</span>Expiry Write-offs</a>
   <div class="nav-group-label">INSIGHTS</div>
   <a class="side-link {% if request.resolver_match.url_name == 'movements' %}active{% endif %}" href="{% url 'inventory:movements' %}"><span class="nav-glyph">⇄</span>Stock Movements</a>
   <a class="side-link {% if request.resolver_match.namespace == 'reports' %}active{% endif %}" href="{% url 'reports:index' %}"><span class="nav-glyph">▥</span>Reports</a>
-  <a class="side-link {% if request.resolver_match.url_name == 'expiry_list' or request.resolver_match.url_name == 'expiry_form' %}active{% endif %}" href="{% url 'inventory:expiry_list' %}"><span class="nav-glyph">◷</span>Expiry Write-offs</a>
+  {% endif %}
   {% if perms.inventory.add_stockmovement %}<a class="side-link {% if request.resolver_match.url_name == 'adjust' %}active{% endif %}" href="{% url 'inventory:adjust' %}"><span class="nav-glyph">＋</span>Stock Adjustment</a>{% endif %}
+  {% if perms.audit.view_auditlog %}<a class="side-link {% if request.resolver_match.namespace == 'audit' %}active{% endif %}" href="{% url 'audit:list' %}"><span class="nav-glyph">≡</span>Audit Log</a>{% endif %}
 </nav>

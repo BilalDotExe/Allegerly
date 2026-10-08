@@ -1,51 +1,52 @@
 {% extends "base.html" %}
+{% load money_filters %}
 
 {% block title %}{{ item.name }} | Allegderly{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>{{ item.sku }} - {{ item.name }}</h2>
-  <a href="{% url 'inventory:edit' item.pk %}" class="btn btn-outline-secondary">Edit</a>
+<div class="page-heading detail-heading">
+  <div>
+    <div class="eyebrow">INVENTORY</div>
+    <h1>{{ item.name }}</h1>
+    <div class="status-group">
+      <span class="status-pill status-pill-draft">{{ item.sku }}</span>
+      {% if item.is_low_stock %}<span class="status-pill status-pill-warn">Low stock</span>{% endif %}
+      {% if item.has_expiry %}<span class="status-pill status-pill-return">Tracks expiry</span>{% endif %}
+    </div>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'inventory:edit' item.pk %}" class="btn btn-outline-secondary">Edit</a>
+  </div>
 </div>
 
 <div class="card mb-4">
   <div class="card-body">
-    <p><strong>Description:</strong> {{ item.description|default:"-" }}</p>
-    <p><strong>Cost Price:</strong> ${{ item.cost_price }}</p>
-    <p><strong>Sale Price:</strong> ${{ item.sale_price }}</p>
-    <p><strong>Current Stock:</strong> {{ item.current_stock }}
-      {% if item.is_low_stock %}<span class="badge bg-warning text-dark">Low Stock</span>{% endif %}
-    </p>
-    <p><strong>Reorder Level:</strong> {{ item.reorder_level }}</p>
-    <p><strong>Has Expiry:</strong> {{ item.has_expiry|yesno:"Yes,No" }}</p>
+    <div class="row">
+      <div class="col-md-6">
+        <h2 class="card-section-title">Pricing</h2>
+        <p><strong>Cost price:</strong> {{ item.cost_price|usd }}</p>
+        <p><strong>Sale price:</strong> {{ item.sale_price|usd }}</p>
+        <p><strong>Description:</strong> {{ item.description|default:"—" }}</p>
+      </div>
+      <div class="col-md-6">
+        <h2 class="card-section-title">Stock</h2>
+        <p><strong>Current stock:</strong> {{ item.current_stock }}</p>
+        <p><strong>Reorder level:</strong> {{ item.reorder_level }}</p>
+      </div>
+    </div>
   </div>
 </div>
 
-<h4>Recent Movements</h4>
-<table class="table table-sm bg-white">
-  <thead class="table-dark">
-    <tr>
-      <th>Date</th>
-      <th>Type</th>
-      <th>Quantity</th>
-      <th>Note</th>
-      <th>By</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for movement in movements %}
-    <tr>
-      <td>{{ movement.created_at|date:"Y-m-d H:i" }}</td>
-      <td>{{ movement.get_movement_type_display }}</td>
-      <td>{{ movement.quantity }}</td>
-      <td>{{ movement.note|default:"-" }}</td>
-      <td>{{ movement.created_by }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="5" class="text-muted">No movements yet.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<section class="table-panel" aria-label="Recent movements">
+  <div class="table-heading"><div><h2>Recent movements</h2><p>The last 50 changes to this item's stock</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col" class="text-end">Quantity</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
+    <tbody>
+      {% for movement in movements %}<tr><td class="cell-date">{{ movement.created_at|date:"M j, Y H:i" }}</td><td>{{ movement.get_movement_type_display }}</td><td class="text-end cell-money">{{ movement.quantity }}</td><td class="cell-note">{{ movement.note|default:"—" }}</td><td>{{ movement.created_by }}</td></tr>
+      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No movements yet</strong><small>Movements appear as this item is produced, sold or adjusted.</small></span></div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
 
-<a href="{% url 'inventory:list' %}" class="btn btn-secondary">Back to Items</a>
+<a href="{% url 'inventory:list' %}" class="page-back">← Back to Items</a>
 {% endblock %}

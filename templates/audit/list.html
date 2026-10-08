@@ -14,11 +14,11 @@
 
 <section class="table-panel" aria-label="All entries">
   <div class="table-heading"><div><h2>All entries</h2><p>Recorded system activity</p></div></div>
-  <div class="table-responsive"><table class="table data-table">
+  <div class="table-responsive"><table class="table data-table audit-table">
     <thead><tr><th scope="col">Timestamp</th><th scope="col">User</th><th scope="col">Action</th><th scope="col">Object</th><th scope="col">Changes</th><th scope="col">IP</th></tr></thead>
     <tbody>
       {% for entry in page_obj %}
-      <tr><td class="cell-date">{{ entry.timestamp|date:"Y-m-d H:i:s" }}</td><td class="cell-strong">{{ entry.user|default:"-" }}</td><td>{{ entry.action }}</td><td>{{ entry.object_type }} #{{ entry.object_id }}<br><span class="cell-date">{{ entry.object_repr }}</span></td><td class="cell-note">{{ entry.changes|default:"-" }}</td><td class="cell-date">{{ entry.ip_address|default:"-" }}</td></tr>
+      <tr><td class="cell-date">{{ entry.timestamp|date:"M j, Y H:i:s" }}</td><td class="cell-strong">{{ entry.user|default:"—" }}</td><td>{{ entry.action }}</td><td class="cell-wide"><span class="obj-line"><span>{{ entry.object_type }} #{{ entry.object_id }}</span><span class="cell-date obj-repr">{{ entry.object_repr }}</span></span></td><td class="cell-note cell-wide">{% if entry.change_items %}<span class="chg-list">{% for label, value in entry.change_items %}<span class="chg"><b>{{ label }}</b>{{ value }}</span>{% endfor %}</span>{% else %}-{% endif %}</td><td class="cell-date">{{ entry.ip_address|default:"—" }}</td></tr>
       {% empty %}
       <tr><td colspan="6"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No audit entries found</strong><small>Try different filters.</small></span></div></td></tr>
       {% endfor %}

@@ -1,7 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from core.pagination import PAGE_SIZE
+from core.permissions import FULL_ACCESS_GROUPS, group_required
 from django.shortcuts import redirect, render
 
 from .forms import ProductionBatchForm
@@ -10,7 +11,7 @@ from .services import create_production_batch
 from reports.utils import export_csv
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def production_list(request):
     batches = ProductionBatch.objects.select_related("item", "created_by").order_by("-production_date", "-created_at")
     export_params = request.GET.copy()
@@ -31,7 +32,7 @@ def production_list(request):
             ] for batch in batches],
         )
 
-    page_obj = Paginator(batches, 25).get_page(request.GET.get("page"))
+    page_obj = Paginator(batches, PAGE_SIZE).get_page(request.GET.get("page"))
     query = request.GET.copy()
     query.pop("page", None)
     return render(request, "production/list.html", {
@@ -41,7 +42,7 @@ def production_list(request):
     })
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def production_create(request):
     form = ProductionBatchForm(request.POST or None)
     if request.method == "POST" and form.is_valid():

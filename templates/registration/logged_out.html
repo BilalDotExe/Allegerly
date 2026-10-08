@@ -1,13 +1,39 @@
-{% extends "base.html" %}
+{% load static %}
+<!doctype html>
+<html lang="en">
+{# Standalone, like the login page: extending base.html showed the whole #}
+{# workspace sidebar to someone who has just signed out. #}
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7f5">
+  <title>Signed out | Allegderly</title>
+  <link rel="preload" href="{% static 'vendor/fonts/geist-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+  <main class="auth-shell signed-out-shell">
+    <section class="auth-panel">
+      <div class="auth-wrap">
+        <div class="mobile-brand">
+          <span class="mark">A</span>
+          <span class="wordmark">Allegderly</span>
+        </div>
 
-{% block title %}Logged out{% endblock %}
+        <span class="eyebrow">Session ended</span>
+        <h1>Signed out</h1>
+        <p class="lede">You have been signed out of Allegderly. Your work is saved.</p>
 
-{% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-5 col-lg-4 text-center">
-    <h1 class="h3 mb-3">Signed out</h1>
-    <p class="text-muted mb-4">You have been logged out of Allegderly.</p>
-    <a class="btn btn-primary" href="{% url 'login' %}">Log in again</a>
-  </div>
-</div>
-{% endblock %}
+        <a class="submit signed-out-action" href="{% url 'login' %}">
+          <span>Sign In Again</span>
+          <span class="submit-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg>
+          </span>
+        </a>
+
+        <p class="foot">Close this tab if you are finished, especially on a shared computer.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

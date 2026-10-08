@@ -1,0 +1,84 @@
+{% extends "base.html" %}{% load phone_filters money_filters %}
+{% block title %}{{ po.po_number }} | Allegderly{% endblock %}
+{% block content %}
+<div class="page-heading detail-heading">
+  <div>
+    <div class="eyebrow">PURCHASING</div>
+    <h1>{{ po.po_number }}</h1>
+    <div class="status-group">
+      <span class="status-pill status-pill-{{ po.status }}">{{ po.get_status_display }}</span>
+      {% if po.status != 'draft' and po.status != 'cancelled' %}<span class="status-pill status-pill-pay-{{ po.payment_status }}">{{ po.payment_status_display }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="page-actions">
+    {% if po.status == 'draft' %}
+      <form method="post" action="{% url 'purchasing:place' po.pk %}" data-confirm="Place {{ po.po_number }} with {{ po.vendor.name }}? The vendor is locked once the order is placed.">{% csrf_token %}<button class="btn btn-success app-primary-button" type="submit">Place Order</button></form>
+    {% endif %}
+    {% if po.can_receive %}<a class="btn btn-success app-primary-button" href="{% url 'purchasing:receive' po.pk %}">Receive Goods</a>{% endif %}
+    {% if po.status == 'partial' %}
+      <form method="post" action="{% url 'purchasing:close' po.pk %}" data-confirm="Close this order as received? Outstanding quantities will no longer be expected.">{% csrf_token %}<button class="btn btn-outline-secondary" type="submit">Close Short</button></form>
+    {% endif %}
+    {% if po.status != 'draft' and po.status != 'cancelled' and po.balance_due > 0 %}<a class="btn btn-primary app-primary-button" href="{% url 'purchasing:payment' po.pk %}">Record Payment</a>{% endif %}
+    {% if po.is_editable %}<a class="btn btn-outline-secondary" href="{% url 'purchasing:edit' po.pk %}">Edit</a>{% endif %}
+    {% if po.status != 'draft' and po.status != 'cancelled' %}<a class="btn btn-outline-secondary" href="{% url 'purchasing:print' po.pk %}">View Full Order</a>{% endif %}
+    {% if po.status == 'draft' or po.status == 'ordered' %}<a class="btn btn-outline-danger" href="{% url 'purchasing:cancel' po.pk %}">Cancel Order</a>{% endif %}
+  </div>
+</div>
+
+<div class="card mb-4"><div class="card-body">
+  <div class="row">
+    <div class="col-md-6">
+      <p><strong>Vendor:</strong> <a href="{% url 'vendors:detail' po.vendor.pk %}">{{ po.vendor.name }}</a></p>
+      <p><strong>Vendor contact:</strong> {{ po.vendor.contact_person|default:"—" }} {% if po.vendor.phone %}&middot; {{ po.vendor.phone|us_phone }}{% endif %}</p>
+      <p><strong>Vendor reference:</strong> {{ po.vendor_reference|default:"—" }}</p>
+      <p><strong>Order date:</strong> {{ po.order_date|date:"M j, Y" }} &nbsp; <strong>Expected:</strong> {{ po.expected_date|date:"M j, Y"|default:"—" }}</p>
+      <p><strong>Payment terms:</strong> {{ po.vendor.get_payment_terms_display }}</p>
+      <p><strong>Received:</strong> {{ po.qty_received }} of {{ po.qty_ordered }} units</p>
+      <p><strong>Notes:</strong> {{ po.notes|default:"—" }}</p>
+      {% if po.status == 'cancelled' %}<p><strong>Cancel reason:</strong> {{ po.cancel_reason }}</p>{% endif %}
+    </div>
+    <div class="col-md-6">
+      <p><strong>Subtotal:</strong> {{ po.subtotal|usd }}</p>
+      <p><strong>Tax ({{ po.tax_percent|floatformat:"-2" }}%):</strong> {{ po.tax_amount|usd }}</p>
+      <p><strong>Shipping / other:</strong> {{ po.shipping_cost|usd }}</p>
+      <p><strong>Total:</strong> {{ po.total|usd }}</p>
+      <p><strong>Paid:</strong> {{ po.total_paid|usd }}</p>
+      <p><strong>Balance due:</strong> {{ po.balance_due|usd }}</p>
+    </div>
+  </div>
+</div></div>
+
+<section class="table-panel" aria-label="Items">
+  <div class="table-heading"><div><h2>Items</h2><p>What was ordered and what has arrived</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Item name</th><th scope="col" class="text-end">Ordered</th><th scope="col" class="text-end">Received</th><th scope="col" class="text-end">Buying price</th><th scope="col" class="text-end">Line total</th></tr></thead>
+    <tbody>
+      {% for line in lines %}<tr><td class="cell-strong">{{ line.item_name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end">{{ line.received_qty }}</td><td class="text-end cell-money">{{ line.unit_cost|usd }}</td><td class="text-end cell-balance">{{ line.line_total|usd }}</td></tr>
+      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No line items</strong><small>Edit the order to add items.</small></span></div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<section class="table-panel" aria-label="Goods receipts">
+  <div class="table-heading"><div><h2>Goods receipts</h2><p>Each delivery recorded against this order</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Receipt</th><th scope="col">Date</th><th scope="col">Items</th><th scope="col" class="text-end">Value</th><th scope="col">Note</th></tr></thead>
+    <tbody>
+      {% for receipt in receipts %}<tr><td class="cell-link">{{ receipt.receipt_number }}</td><td class="cell-date">{{ receipt.received_date|date:"M j, Y" }}</td><td>{% for rl in receipt.lines.all %}{{ rl.po_line.item_name }} &times; {{ rl.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}</td><td class="text-end cell-money">{{ receipt.total_value|usd }}</td><td class="cell-note">{{ receipt.note|default:"—" }}</td></tr>
+      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>Nothing received yet</strong><small>Use Receive Goods when a delivery arrives.</small></span></div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<section class="table-panel" aria-label="Payments">
+  <div class="table-heading"><div><h2>Payments</h2><p>Money paid to the vendor for this order</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Date</th><th scope="col">Method</th><th scope="col">Reference</th><th scope="col" class="text-end">Amount</th><th scope="col">Note</th></tr></thead>
+    <tbody>
+      {% for payment in payments %}<tr><td class="cell-date">{{ payment.payment_date|date:"M j, Y" }}</td><td>{{ payment.get_method_display }}</td><td>{{ payment.reference|default:"—" }}</td><td class="text-end cell-money">{{ payment.amount|usd }}</td><td class="cell-note">{{ payment.note|default:"—" }}</td></tr>
+      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No payments recorded</strong><small>Use Record Payment when you pay the vendor.</small></span></div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+<a href="{% url 'purchasing:list' %}" class="page-back">← Back to Purchase Orders</a>
+{% endblock %}

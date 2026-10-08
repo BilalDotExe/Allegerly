@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load phone_filters money_filters %}
+{% block title %}Vendors | Allegderly{% endblock %}
+{% block content %}
+{% url 'vendors:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="PEOPLE" title="Vendors" subtitle="Manage supplier details and purchasing terms." add_url=add_url add_label="Add Vendor" %}
+<section class="table-panel" aria-label="All vendors">
+  <div class="table-heading"><div><h2>All vendors</h2><p>Contact details and payment terms</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Vendor</th><th scope="col">Contact person</th><th scope="col">Phone</th><th scope="col">Email</th><th scope="col">Category</th><th scope="col">Terms</th><th scope="col" class="text-end">We owe</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
+    <tbody>
+      {% for vendor in page_obj %}
+      <tr><td><a class="table-primary-link cell-link" href="{% url 'vendors:detail' vendor.pk %}">{{ vendor.name }}</a></td><td class="cell-date">{{ vendor.contact_person|default:"—" }}</td><td class="cell-date">{{ vendor.phone|us_phone|default:"—" }}</td><td class="cell-date">{{ vendor.email|default:"—" }}</td><td>{{ vendor.get_category_display }}</td><td class="cell-date">{{ vendor.get_payment_terms_display }}</td><td class="text-end cell-balance">{{ vendor.outstanding_payable|usd }}</td><td>{% if vendor.is_active %}<span class="status-pill status-pill-active">Active</span>{% else %}<span class="status-pill status-pill-inactive">Inactive</span>{% endif %}</td><td class="text-end"><a href="{% url 'vendors:edit' vendor.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a></td></tr>
+      {% empty %}
+      <tr><td colspan="9"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No vendors found</strong><small>Add a vendor to get started.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% include "partials/_pagination.html" %}
+{% endblock %}

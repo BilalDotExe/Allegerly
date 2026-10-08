@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static money_filters %}
 {% block title %}Dashboard | Allegderly{% endblock %}
 {% block content %}
 <div class="page-heading dashboard-heading">
@@ -6,25 +7,64 @@
   <a class="btn btn-primary app-primary-button" href="{% url 'invoices:list' %}">View invoices <span aria-hidden="true">→</span></a>
 </div>
 
-<div class="dashboard-grid">
+<div class="kpi-strip">
+  {% for k in kpis %}
+  <div class="kpi-card tone-{{ k.tone }}">
+    <span class="kpi-label">{{ k.label }}</span>
+    <div class="kpi-main">
+      <strong class="kpi-value">{{ k.value }}</strong>
+      {% if k.spark %}<svg class="kpi-spark" viewBox="0 0 {{ k.spark.width }} {{ k.spark.height }}" aria-hidden="true"><polygon class="area" points="{{ k.spark.area }}"/><polyline class="line" points="{{ k.spark.line }}"/><circle cx="{{ k.spark.last_x }}" cy="{{ k.spark.last_y }}" r="2.4"/></svg>{% endif %}
+    </div>
+    <span class="kpi-foot">{% if k.delta %}<em class="delta {% if k.delta.flat %}flat{% elif k.delta.up == k.good_up %}good{% else %}bad{% endif %}">{% if k.delta.flat %}→{% elif k.delta.up %}↑{% else %}↓{% endif %} {{ k.delta.pct }}%</em>{% endif %}{{ k.foot }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="section-title">Needs attention</div>
+<div class="dashboard-grid attention-grid">
+  <section class="dashboard-panel">
+    <div class="panel-heading"><div><h2>Outstanding invoices</h2><p>{{ receivables_total }} owed{% if outstanding_total %} across {{ outstanding_total }} invoice{{ outstanding_total|pluralize }}{% endif %}, most overdue first</p></div><a class="panel-link" href="{% url 'invoices:list' %}">View all <span aria-hidden="true">→</span></a></div>
+    {% if outstanding_total %}<div class="panel-summary">{% include "partials/_rank_bars.html" with rows=ageing_bars %}</div>{% endif %}
+    <div class="table-responsive"><table class="table app-table"><thead><tr><th>Invoice</th><th>Customer</th><th>Balance</th><th>Overdue</th></tr></thead><tbody>{% for invoice in outstanding_invoices %}<tr><td><a class="table-primary-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td><td>{{ invoice.customer.name }}</td><td class="amount-cell">{{ invoice.balance_due|usd }}</td><td>{% if invoice.days_overdue %}<span class="overdue-value">{{ invoice.days_overdue }} days</span>{% else %}<span class="text-secondary">Current</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="4"><div class="empty-state"><span class="empty-mark">✓</span><span><strong>All caught up</strong><small>There are no outstanding invoices.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
+    {% if outstanding_total > 6 %}<div class="panel-more">+ {{ outstanding_total|add:"-6" }} more · <a href="{% url 'invoices:list' %}">see all invoices</a></div>{% endif %}
+  </section>
+
   <section class="dashboard-panel">
     <div class="panel-heading"><div><h2>Low stock</h2><p>Items at or below their reorder level</p></div><a class="panel-link" href="{% url 'inventory:list' %}">View all <span aria-hidden="true">→</span></a></div>
+    <div class="panel-summary">{% include "partials/_segment_bar.html" with seg=stock_health aria="Stock health" empty_title="No items yet" %}</div>
     <div class="table-responsive"><table class="table app-table"><thead><tr><th>Item</th><th>In stock</th><th>Reorder at</th></tr></thead><tbody>{% for item in low_stock_items %}<tr><td><a class="table-primary-link" href="{% url 'inventory:detail' item.pk %}">{{ item.name }}</a></td><td><span class="stock-warning">{{ item.current_stock }}</span></td><td>{{ item.reorder_level }}</td></tr>{% empty %}<tr><td colspan="3"><div class="empty-state"><span class="empty-mark">✓</span><span><strong>Stock levels look good</strong><small>No items need reordering right now.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
+    {% if low_stock_total > 6 %}<div class="panel-more">+ {{ low_stock_total|add:"-6" }} more · <a href="{% url 'inventory:list' %}">see all items</a></div>{% endif %}
   </section>
 
-  <section class="dashboard-panel">
-    <div class="panel-heading"><div><h2>Outstanding invoices</h2><p>Balances awaiting payment</p></div><a class="panel-link" href="{% url 'invoices:list' %}">View all <span aria-hidden="true">→</span></a></div>
-    <div class="table-responsive"><table class="table app-table"><thead><tr><th>Invoice</th><th>Customer</th><th>Balance</th><th>Overdue</th></tr></thead><tbody>{% for invoice in outstanding_invoices %}<tr><td><a class="table-primary-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td><td>{{ invoice.customer.name }}</td><td class="amount-cell">${{ invoice.balance_due }}</td><td>{% if invoice.days_overdue %}<span class="overdue-value">{{ invoice.days_overdue }} days</span>{% else %}<span class="text-secondary">Current</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="4"><div class="empty-state"><span class="empty-mark">✓</span><span><strong>All caught up</strong><small>There are no outstanding invoices.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
-  </section>
-
-  <section class="dashboard-panel">
-    <div class="panel-heading"><div><h2>Recent damage reports</h2><p>Recently recorded inventory loss</p></div><a class="panel-link" href="{% url 'damages:list' %}">View all <span aria-hidden="true">→</span></a></div>
-    <div class="table-responsive"><table class="table app-table"><thead><tr><th>Date</th><th>Item</th><th>Quantity</th><th>Loss</th></tr></thead><tbody>{% for report in recent_damage_reports %}<tr><td>{{ report.date_reported }}</td><td>{{ report.item.name }}</td><td>{{ report.quantity }}</td><td class="amount-cell">${{ report.loss_value }}</td></tr>{% empty %}<tr><td colspan="4"><div class="empty-state"><span class="empty-mark">–</span><span><strong>No recent reports</strong><small>New damage reports will appear here.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
-  </section>
-
-  <section class="dashboard-panel">
+  <section class="dashboard-panel panel-full">
     <div class="panel-heading"><div><h2>Upcoming expirations</h2><p>Production batches nearing expiry</p></div><a class="panel-link" href="{% url 'production:list' %}">View batches <span aria-hidden="true">→</span></a></div>
-    <div class="table-responsive"><table class="table app-table"><thead><tr><th>Batch</th><th>Item</th><th>Expiry date</th><th>Quantity</th></tr></thead><tbody>{% for batch in expiring_batches %}<tr><td><span class="batch-code">{{ batch.batch_code }}</span></td><td>{{ batch.item.name }}</td><td>{{ batch.expiry_date }}</td><td>{{ batch.quantity_produced }}</td></tr>{% empty %}<tr><td colspan="4"><div class="empty-state"><span class="empty-mark">✓</span><span><strong>No upcoming expirations</strong><small>There are no batches nearing expiry.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
+    <div class="table-responsive"><table class="table app-table"><thead><tr><th>Batch</th><th>Item</th><th>Expiry date</th><th>Quantity</th></tr></thead><tbody>{% for batch in expiring_batches %}<tr><td><span class="batch-code">{{ batch.batch_code }}</span></td><td>{{ batch.item.name }}</td><td class="cell-date">{{ batch.expiry_date|date:"M j, Y" }}</td><td>{{ batch.quantity_produced }}</td></tr>{% empty %}<tr><td colspan="4"><div class="empty-state"><span class="empty-mark">✓</span><span><strong>No upcoming expirations</strong><small>There are no batches nearing expiry.</small></span></div></td></tr>{% endfor %}</tbody></table></div>
+  </section>
+</div>
+
+<div class="section-title">Performance</div>
+<p class="visually-hidden" id="chart-range-status" role="status" aria-live="polite"></p>
+<div class="chart-grid">
+  <section class="dashboard-panel chart-wide">
+    <div class="panel-heading"><div><h2>Sales</h2><p>Invoiced per month, last {{ range_months }} months</p></div><div class="range-toggle" role="group" aria-label="Chart time range">{% for r in ranges %}<a href="?range={{ r }}" class="{% if r == range_months %}active{% endif %}">{{ r }}M</a>{% endfor %}</div></div>
+    <div class="chart-body">{% include "partials/_column_chart.html" with chart=sales_chart empty_title="No sales yet" empty_text="Issued invoices will be charted here." %}</div>
+  </section>
+  <section class="dashboard-panel">
+    <div class="panel-heading"><div><h2>Top customers</h2><p>Invoiced, last {{ range_months }} months</p></div><a class="panel-link" href="{% url 'customers:list' %}">Customers <span aria-hidden="true">→</span></a></div>
+    <div class="chart-body">{% include "partials/_rank_bars.html" with rows=top_customers empty_title="No customer sales yet" %}</div>
+  </section>
+  <section class="dashboard-panel chart-wide">
+    <div class="panel-heading"><div><h2>Cash flow</h2><p>Payments received vs refunds paid out</p></div></div>
+    <div class="chart-body">{% include "partials/_column_chart.html" with chart=cash_chart empty_title="No payments yet" empty_text="Recorded payments will be charted here." %}</div>
+  </section>
+  <section class="dashboard-panel">
+    <div class="panel-heading"><div><h2>Top items</h2><p>Revenue before tax, last {{ range_months }} months</p></div><a class="panel-link" href="{% url 'inventory:list' %}">Items <span aria-hidden="true">→</span></a></div>
+    <div class="chart-body">{% include "partials/_rank_bars.html" with rows=top_items empty_title="No item sales yet" %}</div>
+  </section>
+  <section class="dashboard-panel chart-full">
+    <div class="panel-heading"><div><h2>Losses</h2><p>Damaged and expired at cost, plus customer returns</p></div><a class="panel-link" href="{% url 'damages:list' %}">Damage reports <span aria-hidden="true">→</span></a></div>
+    <div class="chart-body">{% include "partials/_column_chart.html" with chart=loss_chart empty_title="No losses recorded" empty_text="Damage, expiry and return values will appear here." %}</div>
   </section>
 </div>
 {% endblock %}
+{% block extra_js %}<script src="{% static 'js/dashboard-range.js' %}"></script>{% endblock %}

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load money_filters %}
 {% block title %}Credit Notes | Allegderly{% endblock %}
 {% block content %}
 {% include "partials/_page_heading.html" with eyebrow="BILLING" title="Credit Notes" subtitle="Credits issued to customers." %}
@@ -8,7 +8,7 @@
     <thead><tr><th scope="col">Credit #</th><th scope="col">Customer</th><th scope="col">Invoice</th><th scope="col" class="text-end">Amount</th><th scope="col" class="text-end">Remaining</th><th scope="col">Status</th><th scope="col">Date</th></tr></thead>
     <tbody>
       {% for credit in page_obj %}
-      <tr><td><a class="table-primary-link cell-link" href="{% url 'invoices:credit_detail' credit.pk %}">{{ credit.credit_number }}</a></td><td class="cell-strong">{{ credit.customer.name }}</td><td>{{ credit.invoice.invoice_number }}</td><td class="text-end cell-money">${{ credit.amount }}</td><td class="text-end cell-balance">${{ credit.remaining_amount }}</td><td>{% if credit.is_refunded %}<span class="status-pill status-pill-voided">Refunded</span>{% elif credit.is_applied %}<span class="status-pill status-pill-draft">Fully applied</span>{% else %}<span class="status-pill status-pill-paid">Available</span>{% endif %}</td><td class="cell-date">{{ credit.created_at|date:"Y-m-d" }}</td></tr>
+      <tr><td><a class="table-primary-link cell-link" href="{% url 'invoices:credit_detail' credit.pk %}">{{ credit.credit_number }}</a></td><td class="cell-strong">{{ credit.customer.name }}</td><td>{{ credit.invoice.invoice_number }}</td><td class="text-end cell-money">{{ credit.amount|usd }}</td><td class="text-end cell-balance">{{ credit.remaining_amount|usd }}</td><td>{% if credit.is_refunded %}<span class="status-pill status-pill-voided">Refunded</span>{% elif credit.is_applied %}<span class="status-pill status-pill-draft">Fully applied</span>{% else %}<span class="status-pill status-pill-paid">Available</span>{% endif %}</td><td class="cell-date">{{ credit.created_at|date:"M j, Y" }}</td></tr>
       {% empty %}
       <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No credit notes found</strong><small>Credit notes appear here when issued.</small></span></div></td></tr>
       {% endfor %}

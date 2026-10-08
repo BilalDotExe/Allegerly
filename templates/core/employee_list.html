@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Employee Accounts | Allegderly{% endblock %}
+{% block content %}
+{% url 'employee_create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="WORKSPACE" title="Employee Accounts" subtitle="Limited logins: invoices, purchase orders, returns and damage reports only." add_url=add_url add_label="New Employee" %}
+
+{% if reveal_password %}
+<div class="password-reveal" role="status">
+  <div class="password-reveal-text">
+    <strong>Password for {{ reveal_employee.username }}</strong>
+    <p>Copy this now and give it to them directly — it won't be shown again.</p>
+  </div>
+  <div class="password-reveal-value">
+    <code>{{ reveal_password }}</code>
+    <button type="button" class="btn btn-sm btn-outline-secondary copy-btn" data-copy="{{ reveal_password }}">Copy</button>
+  </div>
+</div>
+{% endif %}
+
+<section class="table-panel" aria-label="All employee accounts">
+  <div class="table-heading"><div><h2>All employee accounts</h2><p>Create, deactivate or reset access for employee logins</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Username</th><th scope="col">Name</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col"></th></tr></thead>
+    <tbody>
+      {% for employee in employees %}
+      <tr>
+        <td class="cell-strong">{{ employee.username }}</td>
+        <td>{{ employee.get_full_name|default:"—" }}</td>
+        <td>{% if employee.is_active %}<span class="status-pill status-pill-active">Active</span>{% else %}<span class="status-pill status-pill-inactive">Deactivated</span>{% endif %}</td>
+        <td class="cell-date">{{ employee.date_joined|date:"M j, Y" }}</td>
+        <td class="text-end row-actions">
+          <a href="{% url 'employee_reset_password' employee.pk %}" class="btn btn-sm btn-outline-secondary">Reset password</a>
+          <form method="post" action="{% url 'employee_toggle_active' employee.pk %}" class="d-inline">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-secondary">{% if employee.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+          </form>
+          <form method="post" action="{% url 'employee_delete' employee.pk %}" class="d-inline" data-confirm="Delete the employee account for {{ employee.username }}? This can't be undone. If they've created any invoices, purchase orders, returns or damage reports, deactivate the account instead.">{% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No employee accounts yet</strong><small>Create one to give limited access to invoices, purchase orders, returns and damage reports.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Allegderly{% endblock %}
+{% block content %}
+<h1 class="form-page-title">{{ title }}</h1>
+<p class="form-page-lede">Employee accounts can make invoices, manage purchase orders, handle returns and make damage reports. They can't see customers, vendors, items, production batches, reports or the audit log.</p>
+<div class="row">
+  <div class="col-md-6">
+    <form method="post" class="app-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+      <div class="card mb-3"><div class="card-body">
+        <h2 class="card-section-title">Sign-in</h2>
+        <div class="mb-3">{% include "partials/_form_field.html" with field=form.username %}</div>
+        <div class="row g-3">
+          <div class="col-sm-6">{% include "partials/_form_field.html" with field=form.first_name %}</div>
+          <div class="col-sm-6">{% include "partials/_form_field.html" with field=form.last_name %}</div>
+        </div>
+        <div class="mb-0 mt-3">
+          <label class="form-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+          <div class="password-field-group">
+            {{ form.password }}
+            <button type="button" class="btn btn-outline-secondary generate-password-btn" data-target="{{ form.password.id_for_label }}">Generate</button>
+          </div>
+          {% if form.password.help_text %}<div class="form-text">{{ form.password.help_text }}</div>{% endif %}
+          {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors|join:" " }}</div>{% endif %}
+        </div>
+      </div></div>
+      <button type="submit" class="btn btn-primary">Create Account</button>
+      <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

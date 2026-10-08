@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     # local apps
     'core',
     'customers',
+    'vendors',
+    'purchasing',
     'inventory',
     'invoices',
     'damages',
@@ -69,6 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.account',
             ],
         },
     },
@@ -91,7 +94,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+# Audit log and movement timestamps are read by staff on site, so they must show
+# local wall-clock time. Stored UTC, displayed here. Override per deployment.
+TIME_ZONE = os.getenv('TIME_ZONE', 'America/New_York')
 USE_I18N = True
 USE_TZ = True
 

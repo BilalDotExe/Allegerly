@@ -1,0 +1,13 @@
+{% if rows %}
+<ul class="rank-list">
+  {% for r in rows %}
+  <li class="rank-row" title="{{ r.label }}: {{ r.display }}">
+    <span class="rank-label">{{ r.label }}</span>
+    <span class="rank-track"><span class="rank-fill tone-{{ r.tone }}" style="width: {{ r.pct }}%"></span></span>
+    <span class="rank-value">{{ r.display }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty-state chart-empty"><span class="empty-mark">–</span><span><strong>{{ empty_title|default:"Nothing to rank yet" }}</strong><small>{{ empty_text|default:"Issue invoices to see this." }}</small></span></div>
+{% endif %}

@@ -1,12 +1,62 @@
 {% extends "base.html" %}
 {% block title %}{{ title }} | Allegderly{% endblock %}
-{% block content %}<h2>{{ title }}</h2><form method="post" class="mt-3">{% csrf_token %}<div class="row"><div class="col-md-6">
-{% for field in form %}<div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div></div>
-{{ formset.management_form }}{% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors }}</div>{% endif %}
-<div class="table-responsive"><table class="table table-hover bg-white" id="invoice-lines"><thead class="table-dark"><tr><th>Item</th><th>Quantity</th><th>Unit Price</th><th>Delete</th></tr></thead><tbody>
-{% for line_form in formset %}<tr class="line-row">{% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}<td>{{ line_form.item }}{{ line_form.item.errors }}</td><td>{{ line_form.quantity }}{{ line_form.quantity.errors }}</td><td>{{ line_form.unit_price }}{{ line_form.unit_price.errors }}</td><td>{% if line_form.DELETE %}<div class="form-check">{{ line_form.DELETE }}</div>{% endif %}</td></tr>{% endfor %}
-</tbody></table></div><button type="button" class="btn btn-outline-primary mb-3" id="add-line">Add line</button><div><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-secondary ms-2" href="{% url 'invoices:list' %}">Cancel</a></div></form>
+{% block content %}
+<h1 class="form-page-title">{{ title }}</h1>
+<div class="row"><div class="col-xl-9">
+<form method="post" class="app-form invoice-form">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+  <div class="card mb-3"><div class="card-body">
+    <h2 class="card-section-title">Invoice details</h2>
+    <div class="row g-3">
+      {% for field in form %}<div class="col-md-6">{% include "partials/_form_field.html" %}</div>{% endfor %}
+    </div>
+  </div></div>
+
+  <div class="card mb-3"><div class="card-body">
+    <h2 class="card-section-title">Line items</h2>
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
+    <div class="table-responsive line-items-wrap mb-3"><table class="table line-items" id="invoice-lines"><thead><tr><th>Item</th><th>Quantity</th><th>Unit price</th><th>Delete</th></tr></thead><tbody>
+      {% for line_form in formset %}<tr class="line-row">{% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}
+        <td>{{ line_form.item }}{{ line_form.item.errors }}</td>
+        <td>{{ line_form.quantity }}{{ line_form.quantity.errors }}{{ line_form.non_field_errors }}</td>
+        <td>{{ line_form.unit_price }}{{ line_form.unit_price.errors }}</td>
+        <td>{% if line_form.DELETE %}<div class="form-check">{{ line_form.DELETE }}</div>{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>
+    <button type="button" class="btn btn-outline-primary" id="add-line">Add line</button>
+  </div></div>
+
+  <div><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-outline-secondary ms-2" href="{% url 'invoices:list' %}">Cancel</a></div>
+</form>
+</div></div>
 {% endblock %}
-{% block extra_js %}<script>
+{% block extra_js %}
+{{ wholesale_customer_ids|json_script:"wholesale-customer-ids" }}
+<script>
 (function(){const add=document.getElementById('add-line'), body=document.querySelector('#invoice-lines tbody'), total=document.getElementById('id_lines-TOTAL_FORMS'); if(!add||!body||!total)return; add.addEventListener('click',function(){const index=Number(total.value), rows=body.querySelectorAll('.line-row'), template=rows[rows.length-1].cloneNode(true); template.querySelectorAll('input,select,textarea,label').forEach(function(el){if(el.name)el.name=el.name.replace(/-\d+-/g,'-'+index+'-');if(el.id)el.id=el.id.replace(/-\d+-/g,'-'+index+'-');if(el.htmlFor)el.htmlFor=el.htmlFor.replace(/-\d+-/g,'-'+index+'-');if(el.type==='checkbox')el.checked=false;else if(el.tagName==='SELECT')el.selectedIndex=0;else if(el.type!=='hidden')el.value='';}); body.appendChild(template);total.value=index+1;});})();
+(function(){
+  /* json_script escapes the payload properly instead of pasting a Python repr
+     straight into the script body. */
+  var idsTag = document.getElementById('wholesale-customer-ids');
+  var parsed = idsTag ? JSON.parse(idsTag.textContent) : null;
+  var wholesaleIds = (Array.isArray(parsed) ? parsed : []).map(String);
+  var customerField = document.getElementById('id_customer');
+  var taxField = document.getElementById('id_tax_percent');
+  if (!customerField || !taxField) return;
+  var taxHint = document.createElement('div');
+  taxHint.className = 'form-text text-muted';
+  taxHint.textContent = 'Tax is not applied to wholesale customers.';
+  taxHint.style.display = 'none';
+  taxField.insertAdjacentElement('afterend', taxHint);
+  function sync() {
+    var isWholesale = wholesaleIds.indexOf(customerField.value) !== -1;
+    taxField.readOnly = isWholesale;
+    taxField.classList.toggle('bg-light', isWholesale);
+    taxHint.style.display = isWholesale ? '' : 'none';
+    if (isWholesale) taxField.value = '0';
+  }
+  customerField.addEventListener('change', sync);
+  sync();
+})();
 </script>{% endblock %}

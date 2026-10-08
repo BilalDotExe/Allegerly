@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from core.pagination import PAGE_SIZE
 from django.shortcuts import redirect, render
 
 from reports.forms import DateRangeForm
@@ -35,7 +36,7 @@ def damage_list(request):
               report.loss_value, report.note, report.created_by] for report in reports],
         )
 
-    page_obj = Paginator(reports, 25).get_page(request.GET.get("page"))
+    page_obj = Paginator(reports, PAGE_SIZE).get_page(request.GET.get("page"))
     query = request.GET.copy()
     query.pop("page", None)
     return render(request, "damages/list.html", {

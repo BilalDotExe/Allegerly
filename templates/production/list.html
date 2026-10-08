@@ -8,7 +8,7 @@
     <thead><tr><th scope="col">Batch</th><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col">Production date</th><th scope="col">Expiry date</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
     <tbody>
       {% for batch in page_obj %}
-      <tr><td class="cell-link">{{ batch.batch_code }}</td><td class="cell-strong">{{ batch.item.name }}</td><td class="text-end cell-money">{{ batch.quantity_produced }}</td><td class="cell-date">{{ batch.production_date }}</td><td class="cell-date">{{ batch.expiry_date|default:"-" }}</td><td class="cell-note">{{ batch.note|default:"-" }}</td><td>{{ batch.created_by }}</td></tr>
+      <tr><td><span class="batch-code">{{ batch.batch_code }}</span></td><td class="cell-strong">{{ batch.item.name }}</td><td class="text-end cell-money">{{ batch.quantity_produced }}</td><td class="cell-date">{{ batch.production_date|date:"M j, Y" }}</td><td class="cell-date">{{ batch.expiry_date|date:"M j, Y"|default:"—" }}</td><td class="cell-note">{{ batch.note|default:"—" }}</td><td>{{ batch.created_by }}</td></tr>
       {% empty %}
       <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No production batches found</strong><small>Add a batch to get started.</small></span></div></td></tr>
       {% endfor %}

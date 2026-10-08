@@ -1,11 +1,17 @@
 from django.contrib.auth.decorators import login_required, permission_required
-from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.utils.dateparse import parse_date
 
+from core.pagination import paginate
 from reports.utils import export_csv
 
 from .models import AuditLog
+
+
+def _change_items(changes):
+    if isinstance(changes, dict):
+        return [(str(k).replace("_", " ").capitalize(), str(val)) for k, val in changes.items()]
+    return [("Details", str(changes))] if changes else []
 
 
 @login_required
@@ -36,21 +42,21 @@ def audit_list(request):
                 entry.user or "-",
                 entry.action,
                 f"{entry.object_type} #{entry.object_id}\n{entry.object_repr}",
-                entry.changes or "-",
+                "; ".join(f"{k}: {val}" for k, val in _change_items(entry.changes)) or "-",
                 entry.ip_address or "-",
             ] for entry in logs],
         )
 
-    page_obj = Paginator(logs, 50).get_page(request.GET.get("page"))
+    page_obj, pagination_query = paginate(request, logs)
+    for entry in page_obj:
+        entry.change_items = _change_items(entry.changes)
     actions = AuditLog.objects.order_by("action").values_list("action", flat=True).distinct()
-    query = request.GET.copy()
-    query.pop("page", None)
     return render(request, "audit/list.html", {
         "page_obj": page_obj,
         "actions": actions,
         "selected_action": action,
         "date_from": date_from,
         "date_to": date_to,
-        "pagination_query": query.urlencode(),
+        "pagination_query": pagination_query,
         "export_query": export_query,
     })

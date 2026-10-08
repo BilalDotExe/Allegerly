@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Allegderly{% endblock %}
+{% block content %}
+<h1 class="form-page-title">{{ title }}</h1>
+<div class="row">
+  <div class="col-xl-9">
+    {% if po and po.status != 'draft' %}<p class="form-page-lede">This order has been placed, so the vendor is fixed. Prices and quantities can still be edited; quantities cannot go below what has been received.</p>{% endif %}
+    <form method="post" class="app-form po-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+      <div class="card mb-3"><div class="card-body">
+        <h2 class="card-section-title">Order details</h2>
+        <div class="row g-3">
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.vendor %}</div>
+          <div class="col-md-3">{% include "partials/_form_field.html" with field=form.order_date %}</div>
+          <div class="col-md-3">{% include "partials/_form_field.html" with field=form.expected_date %}</div>
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.vendor_reference %}</div>
+          <div class="col-md-3">{% include "partials/_form_field.html" with field=form.tax_percent %}</div>
+          <div class="col-md-3">{% include "partials/_form_field.html" with field=form.shipping_cost %}</div>
+          <div class="col-12">{% include "partials/_form_field.html" with field=form.notes %}</div>
+        </div>
+      </div></div>
+
+      <div class="card mb-3"><div class="card-body">
+        <h2 class="card-section-title">Items to buy</h2>
+        {{ formset.management_form }}
+        {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
+        <div class="table-responsive line-items-wrap mb-3"><table class="table line-items" id="po-lines"><thead><tr><th>Item name</th><th>Quantity</th><th>Buying price</th><th>Delete</th></tr></thead><tbody>
+          {% for line_form in formset %}<tr class="line-row">{% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}
+            <td>{{ line_form.item_name }}{{ line_form.item_name.errors }}{% if line_form.instance.pk and line_form.instance.received_qty %}<div class="form-text received-hint">{{ line_form.instance.received_qty }} already received</div>{% endif %}</td>
+            <td>{{ line_form.quantity }}{{ line_form.quantity.errors }}{{ line_form.non_field_errors }}</td>
+            <td>{{ line_form.unit_cost }}{{ line_form.unit_cost.errors }}</td>
+            <td>{% if line_form.DELETE %}<div class="form-check">{{ line_form.DELETE }}</div>{% endif %}</td></tr>{% endfor %}
+        </tbody></table></div>
+        <button type="button" class="btn btn-outline-primary mb-3" id="add-line">Add line</button>
+        <div class="po-summary text-end"><div>Subtotal: <strong id="po-subtotal">$0.00</strong></div><div class="text-muted small">Estimated total incl. tax and shipping: <strong id="po-total">$0.00</strong></div></div>
+      </div></div>
+
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-outline-secondary ms-2" href="{% if po %}{% url 'purchasing:detail' po.pk %}{% else %}{% url 'purchasing:list' %}{% endif %}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+(function () {
+  var add = document.getElementById('add-line'), body = document.querySelector('#po-lines tbody'),
+      total = document.getElementById('id_lines-TOTAL_FORMS');
+  if (!add || !body || !total) return;
+
+  function money(n) { return '$' + (Math.round(n * 100) / 100).toFixed(2); }
+  function recalc() {
+    var sub = 0;
+    body.querySelectorAll('.line-row').forEach(function (row) {
+      var q = parseFloat(row.querySelector('[name$="-quantity"]').value) || 0;
+      var c = parseFloat(row.querySelector('[name$="-unit_cost"]').value) || 0;
+      var del = row.querySelector('[name$="-DELETE"]');
+      var line = (del && del.checked) ? 0 : q * c;
+      sub += line;
+    });
+    var tax = parseFloat(document.getElementById('id_tax_percent').value) || 0;
+    var ship = parseFloat(document.getElementById('id_shipping_cost').value) || 0;
+    document.getElementById('po-subtotal').textContent = money(sub);
+    document.getElementById('po-total').textContent = money(sub + sub * tax / 100 + ship);
+  }
+
+  add.addEventListener('click', function () {
+    var index = Number(total.value), rows = body.querySelectorAll('.line-row'),
+        template = rows[rows.length - 1].cloneNode(true);
+    template.querySelectorAll('input,select,textarea,label').forEach(function (el) {
+      if (el.name) el.name = el.name.replace(/-\d+-/g, '-' + index + '-');
+      if (el.id) el.id = el.id.replace(/-\d+-/g, '-' + index + '-');
+      if (el.htmlFor) el.htmlFor = el.htmlFor.replace(/-\d+-/g, '-' + index + '-');
+      if (el.type === 'checkbox') el.checked = false;
+      else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+      else if (el.type !== 'hidden' || /-id$/.test(el.name || '')) el.value = '';
+    });
+    template.querySelectorAll('.received-hint, .text-danger, .errorlist').forEach(function (n) { n.remove(); });
+    body.appendChild(template);
+    total.value = index + 1;
+    recalc();
+  });
+  document.querySelector('.po-form').addEventListener('input', recalc);
+  document.querySelector('.po-form').addEventListener('change', recalc);
+  recalc();
+})();
+</script>{% endblock %}

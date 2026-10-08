@@ -1,0 +1,88 @@
+{% load static phone_filters money_filters %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ invoice.invoice_number }} | Allegderly</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/print-doc.css' %}">
+</head>
+<body>
+  <div class="no-print">
+    <button type="button" onclick="window.print()">Print</button>
+    <a href="{% url 'invoices:detail' invoice.pk %}">Back to Invoice</a>
+  </div>
+
+  <div class="invoice-sheet">
+    <header class="inv-head">
+      <div class="biz">
+        <h1>{{ company.name }}</h1>
+        {% for line in company.address_lines %}<small>{{ line }}</small>{% endfor %}
+        {% if company.phone or company.email or company.website %}<small>{{ company.phone|us_phone }}{% if company.phone and company.email %} &middot; {% endif %}{{ company.email }}{% if company.website and company.phone or company.website and company.email %} &middot; {% endif %}{{ company.website }}</small>{% endif %}
+        {% if company.tax_id %}<small>Tax ID {{ company.tax_id }}</small>{% endif %}
+      </div>
+      <div class="inv-title">
+        <span class="meta-label">Invoice</span>
+        <span class="num">{{ invoice.invoice_number }}</span>
+      </div>
+    </header>
+
+    <section class="inv-parties">
+      <div class="party">
+        <span class="meta-label">Bill To</span>
+        <p><strong>{{ invoice.customer.invoice_name }}</strong></p>
+        {% if invoice.customer.company_name and invoice.customer.company_name != invoice.customer.invoice_name %}<p>{{ invoice.customer.company_name }}</p>{% endif %}
+        {% for line in invoice.customer.billing_address_lines %}<p>{{ line }}</p>{% endfor %}
+        {% if invoice.customer.phone %}<p>{{ invoice.customer.phone|us_phone }}</p>{% endif %}
+        {% if invoice.customer.email %}<p>{{ invoice.customer.email }}</p>{% endif %}
+      </div>
+      {% if not invoice.customer.shipping_same_as_billing and invoice.customer.shipping_address_lines %}
+      <div class="party">
+        <span class="meta-label">Ship To</span>
+        <p><strong>{{ invoice.customer.invoice_name }}</strong></p>
+        {% for line in invoice.customer.shipping_address_lines %}<p>{{ line }}</p>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="meta-grid">
+        <span class="meta-label">Invoice no.</span><span>{{ invoice.invoice_number }}</span>
+        <span class="meta-label">Issue date</span><span>{{ invoice.issue_date|date:"M j, Y"|default:"—" }}</span>
+        <span class="meta-label">Due date</span><span>{{ invoice.due_date|date:"M j, Y"|default:"—" }}</span>
+        <span class="meta-label">Status</span><span>{{ invoice.get_status_display }}</span>
+      </div>
+    </section>
+
+    <table class="inv-lines">
+      <thead>
+        <tr><th>#</th><th>SKU</th><th>Item</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Line total</th></tr>
+      </thead>
+      <tbody>
+        {% for line in lines %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td class="sku">{{ line.item.sku }}</td>
+          <td>{{ line.item.name }}</td>
+          <td class="num">{{ line.quantity }}</td>
+          <td class="num">{{ line.unit_price|usd }}</td>
+          <td class="num">{{ line.line_total|usd }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No line items.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if invoice.notes %}<p class="inv-notes"><strong>Notes:</strong> {{ invoice.notes }}</p>{% endif %}
+
+    <section class="totals">
+      <div><span>Subtotal</span><span>{{ invoice.subtotal|usd }}</span></div>
+      <div><span>Tax ({{ invoice.tax_percent }}%)</span><span>{{ invoice.tax_amount|usd }}</span></div>
+      <div class="grand"><span>Total</span><span>{{ invoice.total|usd }}</span></div>
+      <div><span>Paid</span><span>{{ invoice.total_paid|usd }}</span></div>
+      {% if invoice.total_credits_applied %}<div><span>Credits applied</span><span>{{ invoice.total_credits_applied|usd }}</span></div>{% endif %}
+      <div class="due"><span>Balance due</span><span>{{ invoice.balance_due|usd }}</span></div>
+    </section>
+
+    {% if company.invoice_footer %}<footer class="inv-foot">{{ company.invoice_footer }}</footer>{% endif %}
+  </div>
+</body>
+</html>

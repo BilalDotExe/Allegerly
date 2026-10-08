@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from core.money import money
 from .models import Invoice, Payment
 from audit.services import log as audit_log
 
@@ -114,3 +115,41 @@ def record_payment(invoice: Invoice, amount, method: str, payment_date, user, no
         audit_log(user, 'invoice_paid', invoice, request=request)
 
     return payment
+
+
+def open_invoices_oldest_first(customer):
+    """Issued invoices that still owe money, oldest first (the order a payment is applied in)."""
+    invoices = Invoice.objects.filter(customer=customer, status='issued').order_by(
+        'issue_date', 'created_at', 'pk'
+    )
+    return [inv for inv in invoices if inv.balance_due > 0]
+
+
+def allocate_oldest_first(invoices, amount):
+    """Split `amount` across `invoices` in order, filling each balance before moving on.
+
+    Returns ({invoice.pk: portion}, leftover). Leftover is whatever the invoices could not absorb.
+    """
+    remaining = money(amount)
+    allocation = {}
+    for invoice in invoices:
+        if remaining <= 0:
+            break
+        portion = min(remaining, invoice.balance_due)
+        allocation[invoice.pk] = portion
+        remaining -= portion
+    return allocation, remaining
+
+
+@transaction.atomic
+def record_customer_payment(customer, allocation, method, payment_date, user, note='', request=None):
+    """Record one payment per invoice for `allocation` ({invoice: amount}), all or nothing."""
+    payments = []
+    for invoice, amount in allocation.items():
+        if invoice.customer_id != customer.pk:
+            raise ValidationError("Invoice does not belong to this customer.")
+        payments.append(record_payment(
+            invoice=invoice, amount=amount, method=method, payment_date=payment_date,
+            user=user, note=note, request=request,
+        ))
+    return payments

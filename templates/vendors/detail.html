@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load phone_filters money_filters %}
+
+{% block title %}{{ vendor.name }} | Allegderly{% endblock %}
+
+{% block content %}
+<div class="page-heading detail-heading">
+  <div>
+    <div class="eyebrow">PEOPLE</div>
+    <h1>{{ vendor.name }}</h1>
+    <div class="status-group">
+      {% if vendor.is_active %}<span class="status-pill status-pill-active">Active</span>{% else %}<span class="status-pill status-pill-inactive">Inactive</span>{% endif %}
+      <span class="status-pill status-pill-draft">{{ vendor.get_category_display }}</span>
+    </div>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'purchasing:create' %}?vendor={{ vendor.pk }}" class="btn btn-primary app-primary-button"><span aria-hidden="true">＋</span> New Purchase Order</a>
+    <a href="{% url 'vendors:edit' vendor.pk %}" class="btn btn-outline-secondary">Edit</a>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <h2 class="card-section-title">Contact</h2>
+        <p><strong>Contact person:</strong> {{ vendor.contact_person|default:"—" }}</p>
+        <p><strong>Phone:</strong> {% if vendor.phone %}<a href="tel:{{ vendor.phone }}">{{ vendor.phone|us_phone }}</a>{% else %}—{% endif %}</p>
+        <p><strong>Email:</strong> {% if vendor.email %}<a href="mailto:{{ vendor.email }}">{{ vendor.email }}</a>{% else %}—{% endif %}</p>
+        <p><strong>Address:</strong> {{ vendor.address|default:"—"|linebreaksbr }}</p>
+      </div>
+      <div class="col-md-6">
+        <h2 class="card-section-title">Terms</h2>
+        <p><strong>Tax ID / GSTIN:</strong> {{ vendor.tax_id|default:"—" }}</p>
+        <p><strong>Payment terms:</strong> {{ vendor.get_payment_terms_display }}</p>
+        <p><strong>Amount we owe:</strong> {{ vendor.outstanding_payable|usd }}</p>
+        <p><strong>Notes:</strong> {{ vendor.notes|default:"—" }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="table-panel mb-4" aria-label="Purchase orders">
+  <div class="table-heading"><div><h2>Purchase orders</h2><p>Recent orders placed with this vendor</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Order</th><th scope="col">Status</th><th scope="col">Order date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th></tr></thead>
+    <tbody>
+      {% for po in recent_orders %}<tr><td><a class="table-primary-link cell-link" href="{% url 'purchasing:detail' po.pk %}">{{ po.po_number }}</a></td><td><div class="status-group"><span class="status-pill status-pill-{{ po.status }}">{{ po.get_status_display }}</span>{% if po.status != 'draft' and po.status != 'cancelled' %}<span class="status-pill status-pill-pay-{{ po.payment_status }}">{{ po.payment_status_display }}</span>{% endif %}</div></td><td class="cell-date">{{ po.order_date|date:"M j, Y" }}</td><td class="text-end cell-money">{{ po.total|usd }}</td><td class="text-end cell-balance">{% if po.status == 'cancelled' or po.status == 'draft' %}—{% else %}{{ po.balance_due|usd }}{% endif %}</td></tr>
+      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No purchase orders yet</strong><small>Use New Purchase Order to order from this vendor.</small></span></div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<a href="{% url 'vendors:list' %}" class="page-back">← Back to Vendors</a>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load money_filters %}
 {% block title %}Outstanding Invoices | Allegderly{% endblock %}
 {% block content %}
 {% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Outstanding Invoices" subtitle="Unpaid invoices and how overdue they are." %}
@@ -11,12 +11,13 @@
     <thead><tr><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col">Issue date</th><th scope="col">Due date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th><th scope="col" class="text-end">Days overdue</th><th scope="col">Bucket</th></tr></thead>
     <tbody>
       {% for invoice in invoices %}
-      <tr><td class="cell-link">{{ invoice.invoice_number }}</td><td class="cell-strong">{{ invoice.customer.name }}</td><td class="cell-date">{{ invoice.issue_date|default:"-" }}</td><td class="cell-date">{{ invoice.due_date|default:"-" }}</td><td class="text-end cell-money">${{ invoice.total }}</td><td class="text-end cell-balance">${{ invoice.balance_due }}</td><td class="text-end cell-money">{{ invoice.days_overdue|default_if_none:"-" }}</td><td>{{ invoice.bucket }}</td></tr>
+      <tr><td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td><td class="cell-strong">{{ invoice.customer.name }}</td><td class="cell-date">{{ invoice.issue_date|date:"M j, Y"|default:"—" }}</td><td class="cell-date">{{ invoice.due_date|date:"M j, Y"|default:"—" }}</td><td class="text-end cell-money">{{ invoice.total|usd }}</td><td class="text-end cell-balance">{{ invoice.balance_due|usd }}</td><td class="text-end cell-money">{{ invoice.days_overdue|default_if_none:"—" }}</td><td>{{ invoice.bucket }}</td></tr>
       {% empty %}
       <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No outstanding invoices found</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 </section>
+{% include "partials/_pagination.html" %}
 <a class="page-back" href="{% url 'reports:index' %}">← Back to Reports</a>
 {% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Allegderly{% endblock %}
+{% block content %}
+<div class="page-heading dashboard-heading">
+  <div><div class="eyebrow">WORKSPACE</div><h1>Good to see you, {{ request.user.username }}.</h1><p class="page-subtitle">Quick access to the things you work with.</p></div>
+</div>
+
+<div class="kpi-strip">
+  <div class="kpi-card tone-accent">
+    <span class="kpi-label">Open invoices</span>
+    <div class="kpi-main"><strong class="kpi-value">{{ open_invoice_count }}</strong></div>
+    <span class="kpi-foot">{{ outstanding_total }} outstanding</span>
+  </div>
+  <div class="kpi-card tone-neutral">
+    <span class="kpi-label">Draft invoices</span>
+    <div class="kpi-main"><strong class="kpi-value">{{ draft_invoice_count }}</strong></div>
+    <span class="kpi-foot">waiting to be issued</span>
+  </div>
+  <div class="kpi-card tone-warn">
+    <span class="kpi-label">Open purchase orders</span>
+    <div class="kpi-main"><strong class="kpi-value">{{ open_order_count }}</strong></div>
+    <span class="kpi-foot">{{ payable_total }} owed to vendors</span>
+  </div>
+  <div class="kpi-card tone-neutral">
+    <span class="kpi-label">Damage reports</span>
+    <div class="kpi-main"><strong class="kpi-value">{{ damages_this_month }}</strong></div>
+    <span class="kpi-foot">this month</span>
+  </div>
+  <div class="kpi-card tone-neutral">
+    <span class="kpi-label">Returns</span>
+    <div class="kpi-main"><strong class="kpi-value">{{ returns_this_month }}</strong></div>
+    <span class="kpi-foot">this month</span>
+  </div>
+</div>
+
+<div class="section-title">Quick links</div>
+<div class="quick-link-grid">
+  <a class="quick-link-card" href="{% url 'invoices:create' %}"><span class="quick-link-glyph" aria-hidden="true">▧</span><span><strong>New Invoice</strong><small>Bill a customer</small></span></a>
+  <a class="quick-link-card" href="{% url 'purchasing:create' %}"><span class="quick-link-glyph" aria-hidden="true">⊞</span><span><strong>New Purchase Order</strong><small>Order from a vendor</small></span></a>
+  <a class="quick-link-card" href="{% url 'returns:create' %}"><span class="quick-link-glyph" aria-hidden="true">↩</span><span><strong>New Return</strong><small>Record a customer return</small></span></a>
+  <a class="quick-link-card" href="{% url 'damages:create' %}"><span class="quick-link-glyph" aria-hidden="true">◇</span><span><strong>New Damage Report</strong><small>Log damaged stock</small></span></a>
+</div>
+{% endblock %}

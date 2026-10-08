@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Receive {{ po.po_number }} | Allegderly{% endblock %}
+{% block content %}
+<h1 class="form-page-title">Receive Goods — {{ po.po_number }}</h1>
+<div class="row"><div class="col-xl-10">
+  <p class="form-page-lede">From {{ po.vendor.name }}. Enter what actually arrived. You can change the buying price if the vendor charged differently.</p>
+  <form method="post" class="app-form">
+    {% csrf_token %}
+    <div class="card mb-3"><div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">{% include "partials/_form_field.html" with field=header.received_date %}</div>
+        <div class="col-md-8">{% include "partials/_form_field.html" with field=header.note %}</div>
+      </div>
+    </div></div>
+
+    <div class="table-responsive line-items-wrap mb-3"><table class="table line-items receive-table" id="receive-lines">
+      <thead><tr><th scope="col">Item name</th><th scope="col" class="text-end">Ordered</th><th scope="col" class="text-end">Received</th><th scope="col" class="text-end">Outstanding</th><th scope="col">Receive now</th><th scope="col">Buying price</th></tr></thead>
+      <tbody>
+        {% for line, f in line_forms %}
+        <tr class="line-row">
+          <td class="cell-wide cell-strong">{{ line.item_name }}</td>
+          <td class="text-end">{{ line.quantity }}</td><td class="text-end">{{ line.received_qty }}</td><td class="text-end">{{ line.outstanding_qty }}</td>
+          <td>{{ f.quantity }}{% if f.quantity.errors %}<div class="text-danger small">{{ f.quantity.errors|join:" " }}</div>{% endif %}</td>
+          <td>{{ f.unit_cost }}{% if f.unit_cost.errors %}<div class="text-danger small">{{ f.unit_cost.errors|join:" " }}</div>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <button class="btn btn-success">Record Receipt</button>
+    <a class="btn btn-outline-secondary ms-2" href="{% url 'purchasing:detail' po.pk %}">Cancel</a>
+  </form>
+</div></div>
+{% endblock %}

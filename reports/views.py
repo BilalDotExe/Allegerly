@@ -2,12 +2,13 @@ from collections import defaultdict
 from datetime import date
 from decimal import Decimal
 
-from django.contrib.auth.decorators import login_required
 from django.db.models import DecimalField, ExpressionWrapper, F, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
 
 from core.money import money
+from core.pagination import paginate
+from core.permissions import FULL_ACCESS_GROUPS, group_required
 from damages.models import DamageReport
 from inventory.models import ExpiryWriteOff, Item
 from invoices.models import Invoice
@@ -20,6 +21,8 @@ from .utils import export_csv
 
 ZERO_MONEY = Decimal("0.00")
 MONEY_FIELD = DecimalField(max_digits=14, decimal_places=2)
+# Reports are read in longer runs than list screens, so they page larger.
+REPORT_PAGE_SIZE = 50
 
 
 def _date_range(request):
@@ -43,11 +46,24 @@ def _export_query(request):
     return query.urlencode()
 
 
-def _report_context(request, form, **context):
-    return {"form": form, "export_query": _export_query(request), **context}
+def _report_context(request, form, *, page_of=None, **context):
+    """Build the template context for a report.
+
+    `page_of` names the context key holding the detail rows. Reports used to
+    render every matching row, so a few years of history meant a page with
+    thousands of table rows. Totals and CSV export still see the whole list;
+    only the on-screen table is paged.
+    """
+    result = {"form": form, "export_query": _export_query(request), **context}
+    if page_of:
+        page_obj, pagination_query = paginate(request, context[page_of], per_page=REPORT_PAGE_SIZE)
+        result[page_of] = page_obj
+        result["page_obj"] = page_obj
+        result["pagination_query"] = pagination_query
+    return result
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def report_index(request):
     reports = [
         ("Sales", "Revenue from issued and paid invoices.", "reports:sales"),
@@ -61,7 +77,7 @@ def report_index(request):
     return render(request, "reports/index.html", {"reports": reports})
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def sales_report(request):
     form, start_date, end_date = _date_range(request)
     invoices = Invoice.objects.filter(status__in=["issued", "paid"]).select_related("customer")
@@ -100,11 +116,11 @@ def sales_report(request):
         )
 
     return render(request, "reports/sales.html", _report_context(
-        request, form, invoices=invoice_list, total_revenue=total_revenue
+        request, form, page_of="invoices", invoices=invoice_list, total_revenue=total_revenue
     ))
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def outstanding_report(request):
     form, start_date, end_date = _date_range(request)
     queryset = Invoice.objects.filter(status__in=["issued", "paid"]).select_related("customer")
@@ -141,11 +157,11 @@ def outstanding_report(request):
         )
 
     return render(request, "reports/outstanding.html", _report_context(
-        request, form, invoices=invoices, buckets=buckets
+        request, form, page_of="invoices", invoices=invoices, buckets=buckets
     ))
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def stock_report(request):
     form, _, _ = _date_range(request)
     items = list(Item.objects.all().order_by("name"))
@@ -162,11 +178,11 @@ def stock_report(request):
         )
 
     return render(request, "reports/stock_levels.html", _report_context(
-        request, form, items=items, low_stock_count=low_stock_count
+        request, form, page_of="items", items=items, low_stock_count=low_stock_count
     ))
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def damages_report(request):
     form, start_date, end_date = _date_range(request)
     queryset = DamageReport.objects.select_related("item", "created_by")
@@ -187,11 +203,11 @@ def damages_report(request):
         )
 
     return render(request, "reports/damages.html", _report_context(
-        request, form, records=records, summary=summary
+        request, form, page_of="records", records=records, summary=summary
     ))
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def returns_report(request):
     form, start_date, end_date = _date_range(request)
     queryset = ReturnRecord.objects.select_related(
@@ -223,11 +239,11 @@ def returns_report(request):
         )
 
     return render(request, "reports/returns.html", _report_context(
-        request, form, records=records, by_item=by_item, by_customer=by_customer
+        request, form, page_of="records", records=records, by_item=by_item, by_customer=by_customer
     ))
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def expiry_report(request):
     form, start_date, end_date = _date_range(request)
     queryset = ExpiryWriteOff.objects.select_related("item", "created_by")
@@ -244,11 +260,11 @@ def expiry_report(request):
         )
 
     return render(request, "reports/expiry.html", _report_context(
-        request, form, records=records, total_qty=total_qty, total_loss_value=total_loss_value
+        request, form, page_of="records", records=records, total_qty=total_qty, total_loss_value=total_loss_value
     ))
 
 
-@login_required
+@group_required(*FULL_ACCESS_GROUPS)
 def production_report(request):
     form, start_date, end_date = _date_range(request)
     queryset = ProductionBatch.objects.select_related("item", "created_by")
@@ -264,5 +280,5 @@ def production_report(request):
         )
 
     return render(request, "reports/production.html", _report_context(
-        request, form, records=records, total_produced=total_produced
+        request, form, page_of="records", records=records, total_produced=total_produced
     ))

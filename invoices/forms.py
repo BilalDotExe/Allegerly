@@ -1,5 +1,5 @@
 from django import forms
-from core.forms import BootstrapForm, BootstrapModelForm
+from core.forms import BootstrapForm, BootstrapModelForm, TableRowFormMixin
 from .models import Invoice, InvoiceLine, Payment, CreditNote
 from customers.models import Customer
 from inventory.models import Item
@@ -15,8 +15,16 @@ class InvoiceForm(BootstrapModelForm):
             "notes": forms.Textarea(attrs={"rows": 3}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        customer = cleaned_data.get("customer")
+        tax_percent = cleaned_data.get("tax_percent")
+        if customer and customer.is_wholesale and tax_percent:
+            self.add_error("tax_percent", "Tax cannot be applied to wholesale customers.")
+        return cleaned_data
 
-class InvoiceLineForm(BootstrapModelForm):
+
+class InvoiceLineForm(TableRowFormMixin, BootstrapModelForm):
     class Meta:
         model = InvoiceLine
         fields = ["item", "quantity", "unit_price"]

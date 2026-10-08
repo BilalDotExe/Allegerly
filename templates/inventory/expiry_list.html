@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load money_filters %}
 {% block title %}Expiry Write-offs | Allegderly{% endblock %}
 {% block content %}
 {% url 'inventory:expiry_create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="INVENTORY" title="Expiry Write-offs" subtitle="Stock written off after expiry." add_url=add_url add_label="New Write-off" %}
@@ -7,12 +7,13 @@
   <div class="table-responsive"><table class="table data-table">
     <thead><tr><th scope="col">Date noticed</th><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col" class="text-end">Loss value</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
     <tbody>
-      {% for writeoff in writeoffs %}
-      <tr><td class="cell-date">{{ writeoff.date_noticed }}</td><td><a class="table-primary-link cell-link" href="{% url 'inventory:detail' writeoff.item.pk %}">{{ writeoff.item.sku }}</a></td><td class="text-end cell-money">{{ writeoff.quantity }}</td><td class="text-end cell-balance">${{ writeoff.loss_value }}</td><td class="cell-note">{{ writeoff.note|default:"-" }}</td><td>{{ writeoff.created_by }}</td></tr>
+      {% for writeoff in page_obj %}
+      <tr><td class="cell-date">{{ writeoff.date_noticed|date:"M j, Y" }}</td><td><a class="table-primary-link cell-link" href="{% url 'inventory:detail' writeoff.item.pk %}">{{ writeoff.item.sku }}</a></td><td class="text-end cell-money">{{ writeoff.quantity }}</td><td class="text-end cell-balance">{{ writeoff.loss_value|usd }}</td><td class="cell-note">{{ writeoff.note|default:"—" }}</td><td>{{ writeoff.created_by }}</td></tr>
       {% empty %}
       <tr><td colspan="6"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No write-offs found</strong><small>Create a write-off when stock expires.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 </section>
+{% include "partials/_pagination.html" %}
 {% endblock %}

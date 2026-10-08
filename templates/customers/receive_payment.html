@@ -1,0 +1,67 @@
+{% extends "base.html" %}{% load money_filters static %}
+{% block title %}Receive payment | Allegderly{% endblock %}
+{% block content %}
+<div class="page-heading detail-heading">
+  <div>
+    <div class="eyebrow">PEOPLE</div>
+    <h1>Receive payment</h1>
+    <p class="page-subtitle">From <a href="{% url 'customers:detail' customer.pk %}">{{ customer.name }}</a>. Type the amount received to pay the oldest invoices first, or fill in the invoices yourself.</p>
+  </div>
+</div>
+
+<div class="kpi-strip kpi-strip-3">
+  <div class="kpi-card tone-warn"><span class="kpi-label">Customer owes</span><div class="kpi-main"><strong class="kpi-value">{{ total_owed|usd }}</strong></div><span class="kpi-foot">across {{ rows|length }} open invoice{{ rows|length|pluralize }}</span></div>
+  <div class="kpi-card tone-accent"><span class="kpi-label">Applying now</span><div class="kpi-main"><strong class="kpi-value" data-applied>$0.00</strong></div><span class="kpi-foot">to the invoices below</span></div>
+  <div class="kpi-card tone-neutral"><span class="kpi-label">Left owing after</span><div class="kpi-main"><strong class="kpi-value" data-remaining data-owed="{{ total_owed }}">{{ total_owed|usd }}</strong></div><span class="kpi-foot">once this is recorded</span></div>
+</div>
+
+{% if rows %}
+<form method="post" class="app-form" data-receive-payment data-busy-label="Recording">
+  {% csrf_token %}
+  {% if extra_error %}<div class="alert alert-danger" role="alert">{{ extra_error }}</div>{% endif %}
+  <div class="card mb-4"><div class="card-body">
+    <h2 class="card-section-title">Payment details</h2>
+    <div class="row g-3">
+      <div class="col-md-3">{% include "partials/_form_field.html" with field=form.amount_received %}</div>
+      <div class="col-md-3">{% include "partials/_form_field.html" with field=form.payment_date %}</div>
+      <div class="col-md-3">{% include "partials/_form_field.html" with field=form.method %}</div>
+      <div class="col-md-3">{% include "partials/_form_field.html" with field=form.note %}</div>
+    </div>
+  </div></div>
+
+  <section class="table-panel" aria-label="Outstanding invoices">
+    <div class="table-heading">
+      <div><h2>Outstanding invoices</h2><p>Oldest first. Edit any amount to pay invoices individually.</p></div>
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-clear-payments>Clear amounts</button>
+    </div>
+    <div class="table-responsive"><table class="table data-table">
+      <thead><tr><th scope="col">Invoice</th><th scope="col">Issue date</th><th scope="col">Due date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th><th scope="col" class="text-end">Payment</th></tr></thead>
+      <tbody>
+        {% for row in rows %}{% with invoice=row.invoice %}<tr>
+          <td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td>
+          <td class="cell-date">{{ invoice.issue_date|date:"M j, Y"|default:"—" }}</td>
+          <td class="cell-date">{{ invoice.due_date|date:"M j, Y"|default:"—" }}</td>
+          <td class="text-end cell-money">{{ invoice.total|usd }}</td>
+          <td class="text-end cell-balance">{{ invoice.balance_due|usd }}</td>
+          <td class="text-end">
+            <div class="pay-cell">
+              <button type="button" class="btn btn-link btn-sm pay-full" data-pay-full aria-label="Pay {{ invoice.invoice_number }} in full">Full</button>
+              <input type="text" inputmode="decimal" autocomplete="off" class="form-control pay-input{% if row.error %} is-invalid{% endif %}" name="pay_{{ invoice.pk }}" value="{{ row.value }}" placeholder="0.00" data-balance="{{ invoice.balance_due }}" aria-label="Payment for {{ invoice.invoice_number }}">
+            </div>
+            {% if row.error %}<div class="text-danger small">{{ row.error }}</div>{% endif %}
+          </td>
+        </tr>{% endwith %}{% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <p class="receive-note" data-over role="status" aria-live="polite"></p>
+  <button class="btn btn-success app-primary-button" type="submit">Record payment</button>
+  <a class="btn btn-outline-secondary ms-2" href="{% url 'customers:detail' customer.pk %}">Cancel</a>
+</form>
+{% else %}
+<div class="list-empty-state"><span class="empty-mark">✓</span><span><strong>Nothing owing</strong><small>{{ customer.name }} has no open invoices.</small></span></div>
+<a class="btn btn-outline-secondary" href="{% url 'customers:detail' customer.pk %}">Back to customer</a>
+{% endif %}
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/receive-payment.js' %}"></script>{% endblock %}

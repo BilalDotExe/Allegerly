@@ -1,22 +1,23 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load money_filters %}
 {% block title %}Sales Report | Allegderly{% endblock %}
 {% block content %}
 {% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Sales Report" subtitle="Invoiced sales for the selected dates." %}
 {% url 'reports:sales' as clear_url %}{% include "partials/_date_filter.html" with clear_url=clear_url %}
 
-<div class="summary-strip"><div class="summary-card"><span>Total revenue</span><strong>${{ total_revenue }}</strong></div></div>
+<div class="summary-strip"><div class="summary-card"><span>Total revenue</span><strong>{{ total_revenue|usd }}</strong></div></div>
 <section class="table-panel" aria-label="Sales">
   <div class="table-heading"><div><h2>Sales</h2><p>Invoice totals and tax</p></div></div>
   <div class="table-responsive"><table class="table data-table">
     <thead><tr><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col">Issue date</th><th scope="col" class="text-end">Subtotal</th><th scope="col" class="text-end">Tax</th><th scope="col" class="text-end">Total</th></tr></thead>
     <tbody>
       {% for invoice in invoices %}
-      <tr><td class="cell-link">{{ invoice.invoice_number }}</td><td class="cell-strong">{{ invoice.customer.name }}</td><td class="cell-date">{{ invoice.issue_date|default:"-" }}</td><td class="text-end cell-money">${{ invoice.report_subtotal }}</td><td class="text-end cell-money">${{ invoice.tax_amount }}</td><td class="text-end cell-balance">${{ invoice.total }}</td></tr>
+      <tr><td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td><td class="cell-strong">{{ invoice.customer.name }}</td><td class="cell-date">{{ invoice.issue_date|date:"M j, Y"|default:"—" }}</td><td class="text-end cell-money">{{ invoice.report_subtotal|usd }}</td><td class="text-end cell-money">{{ invoice.tax_amount|usd }}</td><td class="text-end cell-balance">{{ invoice.total|usd }}</td></tr>
       {% empty %}
       <tr><td colspan="6"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No sales found</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 </section>
+{% include "partials/_pagination.html" %}
 <a class="page-back" href="{% url 'reports:index' %}">← Back to Reports</a>
 {% endblock %}

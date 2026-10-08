@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load money_filters %}
 {% block title %}Damages Report | Allegderly{% endblock %}
 {% block content %}
 {% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Damages Report" subtitle="Damage totals by item and individual records." %}
@@ -10,7 +10,7 @@
     <thead><tr><th scope="col">Item</th><th scope="col" class="text-end">Reports</th><th scope="col" class="text-end">Total quantity</th><th scope="col" class="text-end">Total loss</th></tr></thead>
     <tbody>
       {% for item, values in summary.items %}
-      <tr><td class="cell-strong">{{ item.sku }} — {{ item.name }}</td><td class="text-end cell-money">{{ values.count }}</td><td class="text-end cell-money">{{ values.total_qty }}</td><td class="text-end cell-balance">${{ values.total_loss }}</td></tr>
+      <tr><td class="cell-strong">{{ item.sku }} — {{ item.name }}</td><td class="text-end cell-money">{{ values.count }}</td><td class="text-end cell-money">{{ values.total_qty }}</td><td class="text-end cell-balance">{{ values.total_loss|usd }}</td></tr>
       {% empty %}
       <tr><td colspan="4"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No damage summary available</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
@@ -23,12 +23,13 @@
     <thead><tr><th scope="col">Date</th><th scope="col">SKU</th><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col" class="text-end">Loss value</th><th scope="col">Note</th><th scope="col">Reported by</th></tr></thead>
     <tbody>
       {% for record in records %}
-      <tr><td class="cell-date">{{ record.date_reported }}</td><td class="cell-link">{{ record.item.sku }}</td><td class="cell-strong">{{ record.item.name }}</td><td class="text-end cell-money">{{ record.quantity }}</td><td class="text-end cell-balance">${{ record.loss_value }}</td><td class="cell-note">{{ record.note|default:"-" }}</td><td>{{ record.created_by }}</td></tr>
+      <tr><td class="cell-date">{{ record.date_reported|date:"M j, Y" }}</td><td class="cell-link">{{ record.item.sku }}</td><td class="cell-strong">{{ record.item.name }}</td><td class="text-end cell-money">{{ record.quantity }}</td><td class="text-end cell-balance">{{ record.loss_value|usd }}</td><td class="cell-note">{{ record.note|default:"—" }}</td><td>{{ record.created_by }}</td></tr>
       {% empty %}
       <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No damage reports found</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 </section>
+{% include "partials/_pagination.html" %}
 <a class="page-back" href="{% url 'reports:index' %}">← Back to Reports</a>
 {% endblock %}

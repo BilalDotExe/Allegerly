@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load money_filters %}
 {% block title %}Damage Reports | Allegderly{% endblock %}
 {% block content %}
 {% url 'damages:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="OPERATIONS" title="Damage Reports" subtitle="Record and review damaged stock." add_url=add_url add_label="Add Damage Report" %}
@@ -10,7 +10,7 @@
     <thead><tr><th scope="col">Date</th><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col">Invoice line</th><th scope="col" class="text-end">Loss value</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
     <tbody>
       {% for report in page_obj %}
-      <tr><td class="cell-date">{{ report.date_reported }}</td><td class="cell-strong">{{ report.item.sku }} — {{ report.item.name }}</td><td class="text-end cell-money">{{ report.quantity }}</td><td>{{ report.invoice_line|default:"-" }}</td><td class="text-end cell-balance">${{ report.loss_value }}</td><td class="cell-note">{{ report.note|default:"-" }}</td><td>{{ report.created_by }}</td></tr>
+      <tr><td class="cell-date">{{ report.date_reported|date:"M j, Y" }}</td><td class="cell-strong">{{ report.item.sku }} — {{ report.item.name }}</td><td class="text-end cell-money">{{ report.quantity }}</td><td>{{ report.invoice_line|default:"—" }}</td><td class="text-end cell-balance">{{ report.loss_value|usd }}</td><td class="cell-note">{{ report.note|default:"—" }}</td><td>{{ report.created_by }}</td></tr>
       {% empty %}
       <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No damage reports found</strong><small>Try a different date range or add a report.</small></span></div></td></tr>
       {% endfor %}

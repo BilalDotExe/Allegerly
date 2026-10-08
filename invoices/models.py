@@ -81,6 +81,9 @@ class Invoice(models.Model):
     def clean(self):
         if self.tax_percent is not None and self.tax_percent < 0:
             raise ValidationError({'tax_percent': 'Tax percent cannot be negative.'})
+        if self.customer_id and self.tax_percent:
+            if self.customer.is_wholesale:
+                raise ValidationError({'tax_percent': 'Tax cannot be applied to wholesale customers.'})
 
     def save(self, *args, **kwargs):
         creating = self.pk is None

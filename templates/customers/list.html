@@ -1,18 +1,49 @@
 {% extends "base.html" %}
+{% load phone_filters money_filters %}
 {% block title %}Customers | Allegderly{% endblock %}
 {% block content %}
 {% url 'customers:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="PEOPLE" title="Customers" subtitle="Manage customer details and outstanding balances." add_url=add_url add_label="Add Customer" %}
 <section class="table-panel" aria-label="All customers">
   <div class="table-heading"><div><h2>All customers</h2><p>Contact details and current balances</p></div></div>
   <div class="table-responsive"><table class="table data-table">
-    <thead><tr><th scope="col">Customer</th><th scope="col">Phone</th><th scope="col">Email</th><th scope="col" class="text-end">Balance</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
+    <thead><tr><th scope="col" class="col-expand"><span class="visually-hidden">Expand</span></th><th scope="col">Customer</th><th scope="col">Phone</th><th scope="col">Email</th><th scope="col">Type</th><th scope="col" class="text-end">Balance</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
     <tbody>
-      {% for customer in customers %}
-      <tr><td><a class="table-primary-link cell-link" href="{% url 'customers:detail' customer.pk %}">{{ customer.name }}</a></td><td class="cell-date">{{ customer.phone|default:"-" }}</td><td class="cell-date">{{ customer.email|default:"-" }}</td><td class="text-end cell-balance">${{ customer.outstanding_balance }}</td><td>{% if customer.is_active %}<span class="status-pill status-pill-active">Active</span>{% else %}<span class="status-pill status-pill-inactive">Inactive</span>{% endif %}</td><td class="text-end"><a href="{% url 'customers:edit' customer.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a></td></tr>
+      {% for customer in page_obj %}
+      <tr class="expandable-row">
+        <td class="col-expand"><button type="button" class="row-expand" aria-expanded="false" aria-controls="cust-detail-{{ customer.pk }}" aria-label="Expand {{ customer.name }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></td>
+        <td><a class="table-primary-link cell-link" href="{% url 'customers:detail' customer.pk %}">{{ customer.name }}</a></td>
+        <td class="cell-date">{{ customer.phone|us_phone|default:"—" }}</td>
+        <td class="cell-date">{{ customer.email|default:"—" }}</td>
+        <td>{{ customer.get_customer_type_display }}</td>
+        <td class="text-end cell-balance">{{ customer.outstanding_balance|usd }}</td>
+        <td>{% if customer.is_active %}<span class="status-pill status-pill-active">Active</span>{% else %}<span class="status-pill status-pill-inactive">Inactive</span>{% endif %}</td>
+        <td class="text-end"><a href="{% url 'customers:edit' customer.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a></td>
+      </tr>
+      <tr class="expand-detail" id="cust-detail-{{ customer.pk }}" hidden>
+        <td colspan="8">
+          <div class="expand-card">
+            <dl class="expand-lines-list">
+              <div><dt>Company</dt><dd>{{ customer.company_name|default:"—" }}</dd></div>
+              <div><dt>Name on invoices</dt><dd>{{ customer.invoice_name }}</dd></div>
+              <div><dt>Billing address</dt><dd>{% for line in customer.billing_address_lines %}{{ line }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd></div>
+              <div><dt>Website</dt><dd>{{ customer.website|default:"—" }}</dd></div>
+            </dl>
+            <div class="expand-side">
+              <dl>
+                <div><dt>Type</dt><dd>{{ customer.get_customer_type_display }}</dd></div>
+                <div class="is-total"><dt>Outstanding balance</dt><dd>{{ customer.outstanding_balance|usd }}</dd></div>
+              </dl>
+              <a class="btn btn-primary btn-sm app-primary-button" href="{% url 'customers:detail' customer.pk %}">Open full profile <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+        </td>
+      </tr>
       {% empty %}
-      <tr><td colspan="6"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No customers found</strong><small>Add a customer to get started.</small></span></div></td></tr>
+      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No customers found</strong><small>Add a customer to get started.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 </section>
+{% include "partials/_pagination.html" %}
 {% endblock %}
+{% block extra_js %}{% load static %}<script src="{% static 'js/row-expand.js' %}"></script>{% endblock %}

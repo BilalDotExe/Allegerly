@@ -3,23 +3,82 @@
 {% block title %}{{ title }} | Allegderly{% endblock %}
 
 {% block content %}
+<h1 class="form-page-title">{{ title }}</h1>
 <div class="row">
-  <div class="col-md-6">
-    <h2>{{ title }}</h2>
-    <form method="post" class="mt-3">
+  <div class="col-lg-8">
+    <form method="post" class="app-form customer-form">
       {% csrf_token %}
-      {% for field in form %}
-        <div class="mb-3">
-          <label class="form-label">{{ field.label }}</label>
-          {{ field }}
-          {% if field.errors %}
-            <div class="text-danger small">{{ field.errors }}</div>
-          {% endif %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+      <div class="card mb-3"><div class="card-body">
+        <h2 class="card-section-title">Customer</h2>
+        <div class="row g-3">
+          <div class="col-md-4">{% include "partials/_form_field.html" with field=form.first_name %}</div>
+          <div class="col-md-4">{% include "partials/_form_field.html" with field=form.middle_name %}</div>
+          <div class="col-md-4">{% include "partials/_form_field.html" with field=form.last_name %}</div>
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.company_name %}</div>
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.print_name %}</div>
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.email %}</div>
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.phone %}</div>
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.website %}</div>
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.customer_type %}</div>
         </div>
-      {% endfor %}
+      </div></div>
+
+      <div class="card mb-3"><div class="card-body">
+        <button class="address-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#billingAddress" aria-expanded="{% if form.billing_open %}true{% else %}false{% endif %}" aria-controls="billingAddress">
+          <span><strong>Billing address</strong><small>Street, city, state and ZIP</small></span><span class="chevron" aria-hidden="true">▾</span>
+        </button>
+        <div id="billingAddress" class="collapse {% if form.billing_open %}show{% endif %}">
+          <div class="row g-3 mt-1">
+            <div class="col-12">{% include "partials/_form_field.html" with field=form.billing_line1 %}</div>
+            <div class="col-12">{% include "partials/_form_field.html" with field=form.billing_line2 %}</div>
+            <div class="col-md-5">{% include "partials/_form_field.html" with field=form.billing_city %}</div>
+            <div class="col-md-4">{% include "partials/_form_field.html" with field=form.billing_state %}</div>
+            <div class="col-md-3">{% include "partials/_form_field.html" with field=form.billing_postal_code %}</div>
+            <div class="col-md-6">{% include "partials/_form_field.html" with field=form.billing_country %}</div>
+          </div>
+
+          <div class="form-check mt-4">
+            {{ form.shipping_same_as_billing }}
+            <label class="form-check-label" for="{{ form.shipping_same_as_billing.id_for_label }}">Shipping address is the same as billing</label>
+          </div>
+
+          <div id="shippingAddress" class="mt-3" {% if form.shipping_same_as_billing.value %}hidden{% endif %}>
+            <h3 class="card-subsection-title">Shipping address</h3>
+            <div class="row g-3">
+              <div class="col-12">{% include "partials/_form_field.html" with field=form.shipping_line1 %}</div>
+              <div class="col-12">{% include "partials/_form_field.html" with field=form.shipping_line2 %}</div>
+              <div class="col-md-5">{% include "partials/_form_field.html" with field=form.shipping_city %}</div>
+              <div class="col-md-4">{% include "partials/_form_field.html" with field=form.shipping_state %}</div>
+              <div class="col-md-3">{% include "partials/_form_field.html" with field=form.shipping_postal_code %}</div>
+              <div class="col-md-6">{% include "partials/_form_field.html" with field=form.shipping_country %}</div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+
+      <div class="form-check mb-4">
+        {{ form.is_active }}
+        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Active</label>
+      </div>
+
       <button type="submit" class="btn btn-primary">Save</button>
-      <a href="{% url 'customers:list' %}" class="btn btn-secondary ms-2">Cancel</a>
+      <a href="{% url 'customers:list' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var same = document.getElementById('{{ form.shipping_same_as_billing.id_for_label }}');
+  var shipping = document.getElementById('shippingAddress');
+  if (!same || !shipping) return;
+  function sync() { shipping.hidden = same.checked; }
+  same.addEventListener('change', sync);
+  sync();
+})();
+</script>
 {% endblock %}

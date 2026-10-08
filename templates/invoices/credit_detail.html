@@ -1,1 +1,47 @@
-{% extends "base.html" %}{% block title %}{{ credit.credit_number }} | Allegderly{% endblock %}{% block content %}<div class="d-flex justify-content-between align-items-center mb-3"><h2>{{ credit.credit_number }}</h2><div>{% if not credit.is_applied and not credit.is_refunded %}<a class="btn btn-primary" href="{% url 'invoices:credit_apply' credit.pk %}">Apply</a>{% endif %}{% if credit.is_applied and not credit.is_refunded %}<a class="btn btn-outline-primary" href="{% url 'invoices:credit_refund' credit.pk %}">Mark Refunded</a>{% endif %}</div></div><div class="card mb-4"><div class="card-body"><p><strong>Customer:</strong> {{ credit.customer.name }}</p><p><strong>Invoice:</strong> <a href="{% url 'invoices:detail' credit.invoice.pk %}">{{ credit.invoice.invoice_number }}</a></p><p><strong>Reason:</strong> {{ credit.reason|default:"-" }}</p><p><strong>Amount:</strong> ${{ credit.amount }}</p><p><strong>Remaining amount:</strong> ${{ credit.remaining_amount }}</p><p><strong>Status:</strong> {% if credit.is_refunded %}Refunded ({{ credit.get_refund_method_display }} on {{ credit.refund_date }}){% elif credit.is_applied %}Fully applied{% else %}Available{% endif %}</p></div></div><h4>Applications</h4><table class="table table-hover bg-white"><thead class="table-dark"><tr><th>Invoice</th><th>Amount</th><th>Date</th><th>By</th></tr></thead><tbody>{% for app in applications %}<tr><td><a href="{% url 'invoices:detail' app.invoice.pk %}">{{ app.invoice.invoice_number }}</a></td><td>${{ app.amount }}</td><td>{{ app.created_at|date:"Y-m-d" }}</td><td>{{ app.created_by }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">No applications yet.</td></tr>{% endfor %}</tbody></table><a href="{% url 'invoices:credit_list' %}" class="btn btn-secondary">Back to Credit Notes</a>{% endblock %}
+{% extends "base.html" %}{% load money_filters %}
+{% block title %}{{ credit.credit_number }} | Allegderly{% endblock %}
+{% block content %}
+<div class="page-heading detail-heading">
+  <div>
+    <div class="eyebrow">BILLING</div>
+    <h1>{{ credit.credit_number }}</h1>
+    <div class="status-group">
+      {% if credit.is_refunded %}<span class="status-pill status-pill-voided">Refunded</span>
+      {% elif credit.is_applied %}<span class="status-pill status-pill-draft">Fully applied</span>
+      {% else %}<span class="status-pill status-pill-paid">Available</span>{% endif %}
+    </div>
+  </div>
+  <div class="page-actions">
+    {% if not credit.is_applied and not credit.is_refunded %}<a class="btn btn-primary app-primary-button" href="{% url 'invoices:credit_apply' credit.pk %}">Apply Credit</a>{% endif %}
+    {% if credit.is_applied and not credit.is_refunded %}<a class="btn btn-outline-primary" href="{% url 'invoices:credit_refund' credit.pk %}">Mark Refunded</a>{% endif %}
+  </div>
+</div>
+
+<div class="card mb-4"><div class="card-body">
+  <div class="row">
+    <div class="col-md-6">
+      <p><strong>Customer:</strong> <a href="{% url 'customers:detail' credit.customer.pk %}">{{ credit.customer.name }}</a></p>
+      <p><strong>Invoice:</strong> <a href="{% url 'invoices:detail' credit.invoice.pk %}">{{ credit.invoice.invoice_number }}</a></p>
+      <p><strong>Reason:</strong> {{ credit.reason|default:"—" }}</p>
+    </div>
+    <div class="col-md-6">
+      <p><strong>Amount:</strong> {{ credit.amount|usd }}</p>
+      <p><strong>Remaining amount:</strong> {{ credit.remaining_amount|usd }}</p>
+      {% if credit.is_refunded %}<p><strong>Refunded:</strong> {{ credit.get_refund_method_display }} on {{ credit.refund_date|date:"M j, Y" }}</p>{% endif %}
+    </div>
+  </div>
+</div></div>
+
+<section class="table-panel" aria-label="Applications">
+  <div class="table-heading"><div><h2>Applications</h2><p>Invoices this credit has been put towards</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Invoice</th><th scope="col" class="text-end">Amount</th><th scope="col">Date</th><th scope="col">By</th></tr></thead>
+    <tbody>
+      {% for app in applications %}<tr><td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' app.invoice.pk %}">{{ app.invoice.invoice_number }}</a></td><td class="text-end cell-money">{{ app.amount|usd }}</td><td class="cell-date">{{ app.created_at|date:"M j, Y" }}</td><td>{{ app.created_by }}</td></tr>
+      {% empty %}<tr><td colspan="4"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No applications yet</strong><small>Use Apply Credit to put this towards an invoice.</small></span></div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<a href="{% url 'invoices:credit_list' %}" class="page-back">← Back to Credit Notes</a>
+{% endblock %}

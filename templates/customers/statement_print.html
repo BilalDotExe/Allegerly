@@ -1,0 +1,70 @@
+{% load static phone_filters money_filters %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Statement — {{ customer.name }} | Allegderly</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/print-doc.css' %}">
+</head>
+<body>
+  <div class="no-print">
+    <button type="button" onclick="window.print()">Print</button>
+    <a href="{% url 'customers:detail' customer.pk %}">Back to Customer</a>
+    <a href="{% url 'customers:statement_csv' customer.pk %}">Download CSV</a>
+  </div>
+
+  <div class="invoice-sheet">
+    <header class="inv-head">
+      <div class="biz">
+        <h1>{{ company.name }}</h1>
+        {% for line in company.address_lines %}<small>{{ line }}</small>{% endfor %}
+        {% if company.phone or company.email or company.website %}<small>{{ company.phone|us_phone }}{% if company.phone and company.email %} &middot; {% endif %}{{ company.email }}{% if company.website and company.phone or company.website and company.email %} &middot; {% endif %}{{ company.website }}</small>{% endif %}
+      </div>
+      <div class="inv-title">
+        <span class="meta-label">Statement</span>
+        <span class="num">{% now "M j, Y" %}</span>
+      </div>
+    </header>
+
+    <section class="inv-parties">
+      <div class="party">
+        <span class="meta-label">Statement For</span>
+        <p><strong>{{ customer.invoice_name }}</strong></p>
+        {% if customer.company_name and customer.company_name != customer.invoice_name %}<p>{{ customer.company_name }}</p>{% endif %}
+        {% for line in customer.billing_address_lines %}<p>{{ line }}</p>{% endfor %}
+        {% if customer.phone %}<p>{{ customer.phone|us_phone }}</p>{% endif %}
+        {% if customer.email %}<p>{{ customer.email }}</p>{% endif %}
+      </div>
+      <div class="meta-grid">
+        <span class="meta-label">Activity</span><span>{{ rows|length }} transaction{{ rows|length|pluralize }}</span>
+        <span class="meta-label">Balance due</span><span>{{ closing_balance|usd }}</span>
+      </div>
+    </section>
+
+    <table class="inv-lines">
+      <thead>
+        <tr><th>Date</th><th>Description</th><th>Reference</th><th class="num">Charge</th><th class="num">Paid/Credited</th><th class="num">Balance</th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.date|date:"M j, Y" }}</td>
+          <td>{{ row.description }}</td>
+          <td class="sku">{{ row.reference }}</td>
+          <td class="num">{% if row.debit %}{{ row.debit|usd }}{% endif %}</td>
+          <td class="num">{% if row.credit %}{{ row.credit|usd }}{% endif %}</td>
+          <td class="num">{{ row.balance|usd }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No activity on this account.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <section class="totals">
+      <div class="due"><span>Balance due</span><span>{{ closing_balance|usd }}</span></div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block title %}Cancel {{ po.po_number }} | Allegderly{% endblock %}{% block content %}
+<h1 class="form-page-title">Cancel {{ po.po_number }}</h1>
+<div class="row"><div class="col-md-6">
+  <p class="form-page-lede">Cancelling stops this order being received or paid. It cannot be reopened.</p>
+  <form method="post" class="app-form">{% csrf_token %}
+    <div class="mb-3">{% include "partials/_form_field.html" with field=form.reason %}</div>
+    <button class="btn btn-danger">Confirm Cancel</button><a class="btn btn-outline-secondary ms-2" href="{% url 'purchasing:detail' po.pk %}">Back</a>
+  </form>
+</div></div>
+{% endblock %}

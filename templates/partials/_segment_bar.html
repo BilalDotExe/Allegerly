@@ -1,0 +1,6 @@
+{% if seg.has_data %}
+<div class="seg-bar" role="img" aria-label="{{ aria }}">{% for s in seg.segs %}{% if s.show %}<span class="seg tone-{{ s.tone }}" style="width: {{ s.pct }}%" title="{{ s.label }}: {{ s.value }}"></span>{% endif %}{% endfor %}</div>
+<ul class="seg-legend">{% for s in seg.segs %}<li><i class="dot tone-{{ s.tone }}"></i><span>{{ s.label }}</span><strong>{{ s.value }}</strong></li>{% endfor %}</ul>
+{% else %}
+<div class="empty-state chart-empty"><span class="empty-mark">–</span><span><strong>{{ empty_title|default:"No data yet" }}</strong><small>{{ empty_text|default:"" }}</small></span></div>
+{% endif %}

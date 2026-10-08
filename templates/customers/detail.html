@@ -1,28 +1,69 @@
 {% extends "base.html" %}
+{% load phone_filters money_filters %}
 
 {% block title %}{{ customer.name }} | Allegderly{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>{{ customer.name }}</h2>
-  <a href="{% url 'customers:edit' customer.pk %}" class="btn btn-outline-secondary">Edit</a>
+<div class="page-heading detail-heading">
+  <div>
+    <div class="eyebrow">PEOPLE</div>
+    <h1>{{ customer.name }}</h1>
+    <div class="status-group">
+      {% if customer.is_active %}<span class="status-pill status-pill-active">Active</span>{% else %}<span class="status-pill status-pill-inactive">Inactive</span>{% endif %}
+      <span class="status-pill status-pill-draft">{{ customer.get_customer_type_display }}</span>
+    </div>
+  </div>
+  <div class="page-actions">
+    <a href="{% url 'customers:statement' customer.pk %}" class="btn btn-outline-secondary">View statement</a>
+    <a href="{% url 'customers:statement_csv' customer.pk %}" class="btn btn-outline-primary export-button"><span aria-hidden="true">↓</span> Export statement</a>
+    <a href="{% url 'customers:edit' customer.pk %}" class="btn btn-outline-secondary">Edit</a>
+    {% if can_receive_payment %}<a href="{% url 'customers:receive_payment' customer.pk %}" class="btn btn-primary app-primary-button">Receive payment</a>{% endif %}
+  </div>
 </div>
 
 <div class="card mb-4">
   <div class="card-body">
-    <p><strong>Phone:</strong> {{ customer.phone|default:"-" }}</p>
-    <p><strong>Email:</strong> {{ customer.email|default:"-" }}</p>
-    <p><strong>Address:</strong> {{ customer.address|default:"-" }}</p>
-    <p><strong>Status:</strong>
-      {% if customer.is_active %}
-        <span class="badge bg-success">Active</span>
-      {% else %}
-        <span class="badge bg-secondary">Inactive</span>
-      {% endif %}
-    </p>
-    <p><strong>Outstanding Balance:</strong> ${{ customer.balance }}</p>
+    <div class="row">
+      <div class="col-md-6">
+        <h2 class="card-section-title">Contact</h2>
+        <div class="contact-info">
+          <p><strong>Company:</strong> {{ customer.company_name|default:"—" }}</p>
+          <p><strong>Name on invoices:</strong> {{ customer.invoice_name }}</p>
+          <p><strong>Phone:</strong> {% if customer.phone %}<a href="tel:{{ customer.phone }}">{{ customer.phone|us_phone }}</a>{% else %}—{% endif %}</p>
+          <p><strong>Email:</strong> {% if customer.email %}<a href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}—{% endif %}</p>
+          <p><strong>Website:</strong> {{ customer.website|default:"—" }}</p>
+          <p><strong>Outstanding balance:</strong> {{ customer.outstanding_balance|usd }}</p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h2 class="card-section-title">Addresses</h2>
+        <p><strong>Billing:</strong><br>{% for line in customer.billing_address_lines %}{{ line }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</p>
+        <p><strong>Shipping:</strong><br>
+          {% if customer.shipping_same_as_billing %}<span class="text-muted">Same as billing</span>
+          {% else %}{% for line in customer.shipping_address_lines %}{{ line }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}{% endif %}
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 
-<a href="{% url 'customers:list' %}" class="btn btn-secondary">Back to Customers</a>
+<section class="table-panel" aria-label="Invoices">
+  <div class="table-heading"><div><h2>Invoices</h2><p>Everything billed to {{ customer.name }}, newest first</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Invoice</th><th scope="col">Status</th><th scope="col">Issue date</th><th scope="col">Due date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th></tr></thead>
+    <tbody>
+      {% for invoice in invoices %}<tr>
+        <td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td>
+        <td><div class="status-group"><span class="status-pill status-pill-{{ invoice.status }}">{{ invoice.get_status_display }}</span></div></td>
+        <td class="cell-date">{{ invoice.issue_date|date:"M j, Y"|default:"—" }}</td>
+        <td class="cell-date">{{ invoice.due_date|date:"M j, Y"|default:"—" }}</td>
+        <td class="text-end cell-money">{{ invoice.total|usd }}</td>
+        <td class="text-end cell-balance">{{ invoice.balance_due|usd }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="6"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No invoices yet</strong><small>Invoices for this customer will appear here.</small></span></div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<a href="{% url 'customers:list' %}" class="page-back">← Back to Customers</a>
 {% endblock %}

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load money_filters %}
 {% block title %}Invoices | Allegderly{% endblock %}
 {% block content %}
 <div class="page-heading list-page-heading">
@@ -21,23 +21,44 @@
 <section class="table-panel" aria-label="Invoice list">
   <div class="table-heading"><div><h2>All invoices</h2><p>Invoice details and current balances</p></div></div>
   <div class="table-responsive"><table class="table data-table">
-    <thead><tr><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col">Status</th><th scope="col">Issue date</th><th scope="col">Due date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th></tr></thead>
+    <thead><tr><th scope="col" class="col-expand"><span class="visually-hidden">Expand</span></th><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col">Status</th><th scope="col">Issue date</th><th scope="col">Due date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th></tr></thead>
     <tbody>
       {% for invoice in page_obj %}
-      <tr>
+      <tr class="expandable-row">
+        <td class="col-expand"><button type="button" class="row-expand" aria-expanded="false" aria-controls="inv-detail-{{ invoice.pk }}" aria-label="Expand {{ invoice.invoice_number }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></td>
         <td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td>
         <td class="cell-strong">{{ invoice.customer.name }}</td>
         <td><div class="status-group"><span class="status-pill status-pill-{{ invoice.status }}">{{ invoice.get_status_display }}</span>{% if invoice.return_status %}<span class="status-pill status-pill-return">{{ invoice.return_status }}</span>{% endif %}</div></td>
-        <td class="cell-date">{{ invoice.issue_date|default:"-" }}</td>
-        <td class="cell-date">{{ invoice.due_date|default:"-" }}</td>
-        <td class="text-end cell-money">${{ invoice.total }}</td>
-        <td class="text-end cell-balance">${{ invoice.balance_due }}</td>
+        <td class="cell-date">{{ invoice.issue_date|date:"M j, Y"|default:"—" }}</td>
+        <td class="cell-date">{{ invoice.due_date|date:"M j, Y"|default:"—" }}</td>
+        <td class="text-end cell-money">{{ invoice.total|usd }}</td>
+        <td class="text-end cell-balance">{{ invoice.balance_due|usd }}</td>
+      </tr>
+      <tr class="expand-detail" id="inv-detail-{{ invoice.pk }}" hidden>
+        <td colspan="8">
+          <div class="expand-card">
+            <table class="expand-lines">
+              <thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Unit price</th><th class="text-end">Line total</th></tr></thead>
+              <tbody>{% for line in invoice.lines.all %}<tr><td>{{ line.item.name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end">{{ line.unit_price|usd }}</td><td class="text-end">{{ line.line_total|usd }}</td></tr>{% empty %}<tr><td colspan="4" class="text-secondary">No line items.</td></tr>{% endfor %}</tbody>
+            </table>
+            <div class="expand-side">
+              <dl>
+                <div><dt>Subtotal</dt><dd>{{ invoice.subtotal|usd }}</dd></div>
+                <div><dt>Tax ({{ invoice.tax_percent|floatformat:"-2" }}%)</dt><dd>{{ invoice.tax_amount|usd }}</dd></div>
+                <div><dt>Paid</dt><dd>{{ invoice.total_paid|usd }}</dd></div>
+                <div class="is-total"><dt>Balance due</dt><dd>{{ invoice.balance_due|usd }}</dd></div>
+              </dl>
+              <a class="btn btn-primary btn-sm app-primary-button" href="{% url 'invoices:detail' invoice.pk %}">Open full invoice <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+        </td>
       </tr>
       {% empty %}
-      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No invoices found</strong><small>Try a different date range or create a new invoice.</small></span></div></td></tr>
+      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No invoices found</strong><small>Try a different date range or create a new invoice.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 </section>
 {% include "partials/_pagination.html" %}
 {% endblock %}
+{% block extra_js %}{% load static %}<script src="{% static 'js/row-expand.js' %}"></script>{% endblock %}

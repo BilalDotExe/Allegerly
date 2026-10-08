@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load money_filters %}{% block title %}Record Payment | Allegderly{% endblock %}{% block content %}
+<h1 class="form-page-title">Record Payment — {{ po.po_number }}</h1>
+<div class="row"><div class="col-md-6">
+  <p class="form-page-lede">To {{ po.vendor.name }} &middot; Balance due: {{ po.balance_due|usd }}</p>
+  <form method="post" class="app-form">{% csrf_token %}
+    {% for field in form %}<div class="mb-3">{% include "partials/_form_field.html" %}</div>{% endfor %}
+    <button class="btn btn-primary">Save Payment</button><a class="btn btn-outline-secondary ms-2" href="{% url 'purchasing:detail' po.pk %}">Cancel</a>
+  </form>
+</div></div>
+{% endblock %}

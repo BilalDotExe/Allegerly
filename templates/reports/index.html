@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Reports | Allegderly{% endblock %}
 {% block content %}
-<h2 class="mb-4">Reports</h2>
-<div class="row g-3">
+{% include "partials/_page_heading.html" with eyebrow="INSIGHTS" title="Reports" subtitle="Filter any report by date, then export it as CSV." %}
+<div class="row g-3 report-cards">
   {% for name, description, url_name in reports %}
   <div class="col-md-6 col-xl-4">
     <div class="card h-100">
       <div class="card-body">
-        <h5 class="card-title"><a class="text-decoration-none" href="{% url url_name %}">{{ name }}</a></h5>
+        <h2 class="card-section-title"><a href="{% url url_name %}">{{ name }}</a></h2>
         <p class="card-text">{{ description }}</p>
-        <a class="btn btn-outline-primary btn-sm" href="{% url url_name %}?export=csv">Export CSV</a>
+        <a class="btn btn-outline-primary btn-sm" href="{% url url_name %}?export=csv"><span aria-hidden="true">↓</span> Export CSV</a>
       </div>
     </div>
   </div>

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Company settings | Allegderly{% endblock %}
+
+{% block content %}
+{% include "partials/_page_heading.html" with eyebrow="Workspace" title="Company settings" subtitle="Your business details. These appear at the top of every printed invoice." %}
+<form method="post" class="settings-form">
+  {% csrf_token %}
+  <div class="card mb-4"><div class="card-body">
+    <h2 class="card-section-title">Business</h2>
+    <div class="row g-3">
+      <div class="col-md-6">{% include "partials/_form_field.html" with field=form.name %}</div>
+      <div class="col-md-6">{% include "partials/_form_field.html" with field=form.tax_id %}</div>
+      <div class="col-md-4">{% include "partials/_form_field.html" with field=form.phone %}</div>
+      <div class="col-md-4">{% include "partials/_form_field.html" with field=form.email %}</div>
+      <div class="col-md-4">{% include "partials/_form_field.html" with field=form.website %}</div>
+    </div>
+  </div></div>
+
+  <div class="card mb-4"><div class="card-body">
+    <h2 class="card-section-title">Business address</h2>
+    <div class="row g-3">
+      <div class="col-12">{% include "partials/_form_field.html" with field=form.address_line1 %}</div>
+      <div class="col-12">{% include "partials/_form_field.html" with field=form.address_line2 %}</div>
+      <div class="col-md-5">{% include "partials/_form_field.html" with field=form.city %}</div>
+      <div class="col-md-4">{% include "partials/_form_field.html" with field=form.state %}</div>
+      <div class="col-md-3">{% include "partials/_form_field.html" with field=form.postal_code %}</div>
+      <div class="col-md-6">{% include "partials/_form_field.html" with field=form.country %}</div>
+    </div>
+  </div></div>
+
+  <div class="card mb-4"><div class="card-body">
+    <h2 class="card-section-title">Invoice</h2>
+    {% include "partials/_form_field.html" with field=form.invoice_footer %}
+  </div></div>
+
+  <button type="submit" class="btn btn-primary">Save settings</button>
+  <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+{% endblock %}

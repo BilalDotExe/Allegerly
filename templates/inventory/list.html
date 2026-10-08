@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load money_filters %}
 {% block title %}Items | Allegderly{% endblock %}
 {% block content %}
 {% url 'inventory:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="INVENTORY" title="Items" subtitle="Prices, stock levels and reorder points." add_url=add_url add_label="Add Item" %}
@@ -7,12 +7,13 @@
   <div class="table-responsive"><table class="table data-table">
     <thead><tr><th scope="col">SKU</th><th scope="col">Name</th><th scope="col" class="text-end">Cost price</th><th scope="col" class="text-end">Sale price</th><th scope="col" class="text-end">Stock</th><th scope="col" class="text-end">Reorder level</th><th scope="col"></th></tr></thead>
     <tbody>
-      {% for item in items %}
-      <tr{% if item.is_low_stock %} class="row-warn"{% endif %}><td><a class="table-primary-link cell-link" href="{% url 'inventory:detail' item.pk %}">{{ item.sku }}</a></td><td class="cell-strong">{{ item.name }}</td><td class="text-end cell-money">${{ item.cost_price }}</td><td class="text-end cell-money">${{ item.sale_price }}</td><td class="text-end cell-balance">{{ item.current_stock }}{% if item.is_low_stock %} <span class="status-pill status-pill-warn">Low</span>{% endif %}</td><td class="text-end cell-money">{{ item.reorder_level }}</td><td class="text-end"><a href="{% url 'inventory:edit' item.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a></td></tr>
+      {% for item in page_obj %}
+      <tr{% if item.is_low_stock %} class="row-warn"{% endif %}><td><a class="table-primary-link cell-link" href="{% url 'inventory:detail' item.pk %}">{{ item.sku }}</a></td><td class="cell-strong">{{ item.name }}</td><td class="text-end cell-money">{{ item.cost_price|usd }}</td><td class="text-end cell-money">{{ item.sale_price|usd }}</td><td class="text-end cell-balance">{{ item.current_stock }}{% if item.is_low_stock %} <span class="status-pill status-pill-warn">Low</span>{% endif %}</td><td class="text-end cell-money">{{ item.reorder_level }}</td><td class="text-end row-actions"><a href="{% url 'inventory:detail' item.pk %}" class="icon-btn" title="View details" aria-label="View details for {{ item.name }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.2"/></svg></a><a href="{% url 'inventory:edit' item.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a></td></tr>
       {% empty %}
       <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No items found</strong><small>Add an item to get started.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 </section>
+{% include "partials/_pagination.html" %}
 {% endblock %}

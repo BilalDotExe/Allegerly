@@ -1,0 +1,88 @@
+{% load static phone_filters money_filters %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ po.po_number }} | Allegderly</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/print-doc.css' %}">
+</head>
+<body>
+  <div class="no-print">
+    <button type="button" onclick="window.print()">Print</button>
+    <a href="{% url 'purchasing:detail' po.pk %}">Back to Purchase Order</a>
+  </div>
+
+  <div class="invoice-sheet">
+    <header class="inv-head">
+      <div class="biz">
+        <h1>{{ company.name }}</h1>
+        {% for line in company.address_lines %}<small>{{ line }}</small>{% endfor %}
+        {% if company.phone or company.email or company.website %}<small>{{ company.phone|us_phone }}{% if company.phone and company.email %} &middot; {% endif %}{{ company.email }}{% if company.website and company.phone or company.website and company.email %} &middot; {% endif %}{{ company.website }}</small>{% endif %}
+        {% if company.tax_id %}<small>Tax ID {{ company.tax_id }}</small>{% endif %}
+      </div>
+      <div class="inv-title">
+        <span class="meta-label">Purchase Order</span>
+        <span class="num">{{ po.po_number }}</span>
+      </div>
+    </header>
+
+    <section class="inv-parties">
+      <div class="party">
+        <span class="meta-label">Vendor</span>
+        <p><strong>{{ po.vendor.name }}</strong></p>
+        {% if po.vendor.contact_person %}<p>Attn: {{ po.vendor.contact_person }}</p>{% endif %}
+        {% if po.vendor.address %}<p>{{ po.vendor.address|linebreaksbr }}</p>{% endif %}
+        {% if po.vendor.phone %}<p>{{ po.vendor.phone|us_phone }}</p>{% endif %}
+        {% if po.vendor.email %}<p>{{ po.vendor.email }}</p>{% endif %}
+      </div>
+      <div class="party">
+        <span class="meta-label">Ship To</span>
+        <p><strong>{{ company.name }}</strong></p>
+        {% for line in company.address_lines %}<p>{{ line }}</p>{% endfor %}
+      </div>
+      <div class="meta-grid">
+        <span class="meta-label">PO no.</span><span>{{ po.po_number }}</span>
+        <span class="meta-label">Order date</span><span>{{ po.order_date|date:"M j, Y" }}</span>
+        <span class="meta-label">Expected</span><span>{{ po.expected_date|date:"M j, Y"|default:"—" }}</span>
+        <span class="meta-label">Terms</span><span>{{ po.vendor.get_payment_terms_display }}</span>
+        {% if po.vendor_reference %}<span class="meta-label">Vendor ref.</span><span>{{ po.vendor_reference }}</span>{% endif %}
+        <span class="meta-label">Status</span><span>{{ po.get_status_display }}</span>
+      </div>
+    </section>
+
+    <table class="inv-lines">
+      <thead>
+        <tr><th>#</th><th>Item name</th><th class="num">Ordered</th><th class="num">Received</th><th class="num">Buying price</th><th class="num">Line total</th></tr>
+      </thead>
+      <tbody>
+        {% for line in lines %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ line.item_name }}</td>
+          <td class="num">{{ line.quantity }}</td>
+          <td class="num">{{ line.received_qty }}</td>
+          <td class="num">{{ line.unit_cost|usd }}</td>
+          <td class="num">{{ line.line_total|usd }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No line items.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if po.notes %}<p class="inv-notes"><strong>Notes:</strong> {{ po.notes }}</p>{% endif %}
+
+    <section class="totals">
+      <div><span>Subtotal</span><span>{{ po.subtotal|usd }}</span></div>
+      <div><span>Tax ({{ po.tax_percent }}%)</span><span>{{ po.tax_amount|usd }}</span></div>
+      <div><span>Shipping / other</span><span>{{ po.shipping_cost|usd }}</span></div>
+      <div class="grand"><span>Total</span><span>{{ po.total|usd }}</span></div>
+      <div><span>Paid</span><span>{{ po.total_paid|usd }}</span></div>
+      <div class="due"><span>Balance due</span><span>{{ po.balance_due|usd }}</span></div>
+    </section>
+
+    <footer class="inv-foot">Please confirm receipt of this order and quote {{ po.po_number }} on all correspondence.</footer>
+  </div>
+</body>
+</html>

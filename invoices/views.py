@@ -2,7 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.core.paginator import Paginator
+from core.models import CompanyProfile
+from core.pagination import PAGE_SIZE
 from django.core.exceptions import ValidationError
+from customers.models import Customer
 from .models import Invoice, CreditNote
 from .forms import InvoiceForm, InvoiceLineFormSet, PaymentForm, VoidInvoiceForm, MarkRefundedForm
 from .services import issue_invoice, void_invoice, record_payment, apply_credit
@@ -19,7 +22,11 @@ def _pagination_query(request):
 
 @login_required
 def invoice_list(request):
-    invoices = Invoice.objects.select_related("customer").order_by("-created_at")
+    invoices = (
+        Invoice.objects.select_related("customer")
+        .prefetch_related("lines__item")
+        .order_by("-created_at")
+    )
     form = DateRangeForm(request.GET or None)
     if form.is_valid():
         start_date = form.cleaned_data.get("start_date")
@@ -40,7 +47,7 @@ def invoice_list(request):
               inv.issue_date, inv.total, inv.balance_due] for inv in invoices],
         )
 
-    page_obj = Paginator(invoices, 25).get_page(request.GET.get("page"))
+    page_obj = Paginator(invoices, PAGE_SIZE).get_page(request.GET.get("page"))
     return render(request, "invoices/list.html", {
         "page_obj": page_obj,
         "pagination_query": _pagination_query(request),
@@ -61,10 +68,14 @@ def invoice_create(request):
         formset.save()
         messages.success(request, f"Invoice {invoice.invoice_number} created.")
         return redirect("invoices:detail", pk=invoice.pk)
+    wholesale_ids = list(
+        Customer.objects.filter(customer_type=Customer.TYPE_WHOLESALE).values_list("pk", flat=True)
+    )
     return render(request, "invoices/form.html", {
         "form": form,
         "formset": formset,
         "title": "New Invoice",
+        "wholesale_customer_ids": wholesale_ids,
     })
 
 
@@ -79,6 +90,26 @@ def invoice_detail(request, pk):
         "lines": lines,
         "payments": payments,
         "credit_notes": credit_notes,
+    })
+
+
+@login_required
+def invoice_print_view(request, pk):
+    invoice = get_object_or_404(Invoice.objects.select_related("customer", "created_by"), pk=pk)
+    if invoice.status not in ("issued", "paid"):
+        messages.error(
+            request,
+            "Only issued or paid invoices can be viewed in full or printed. "
+            f"This invoice is {invoice.get_status_display().lower()}.",
+        )
+        return redirect("invoices:detail", pk=pk)
+    lines = invoice.lines.select_related("item")
+    payments = invoice.payments.filter(is_voided=False).select_related("created_by")
+    return render(request, "invoices/print.html", {
+        "invoice": invoice,
+        "lines": lines,
+        "payments": payments,
+        "company": CompanyProfile.load(),
     })
 
 
@@ -152,7 +183,7 @@ def credit_list(request):
             ] for credit in credits],
         )
 
-    page_obj = Paginator(credits, 25).get_page(request.GET.get("page"))
+    page_obj = Paginator(credits, PAGE_SIZE).get_page(request.GET.get("page"))
     return render(request, "invoices/credit_list.html", {
         "page_obj": page_obj,
         "pagination_query": _pagination_query(request),

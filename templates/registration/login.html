@@ -3,17 +3,126 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Login | Allegderly</title>
-  <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b4538" media="(max-width: 960px)">
+  <meta name="theme-color" content="#f4f7f5">
+  <title>Sign in | Allegderly</title>
+  <link rel="preload" href="{% static 'vendor/fonts/geist-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
-<body class="bg-light d-flex align-items-center" style="height: 100vh;">
-  <div class="container" style="max-width: 400px;">
-    <h3 class="mb-4">Allegderly Login</h3>
-    <form method="post">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-primary w-100">Log in</button>
-    </form>
-  </div>
+<body>
+  <main class="auth-shell">
+
+    <!-- Brand side: deep green with soft glowing orbs -->
+    <section class="auth-brand" aria-hidden="true">
+      <div class="orb orb-a"></div>
+      <div class="orb orb-b"></div>
+      <div class="brand-top">
+        <span class="mark">A</span>
+        <span class="wordmark">Allegderly</span>
+      </div>
+      <div class="brand-copy">
+        <span class="chip">Operations workspace</span>
+        <h2>Every invoice, batch and return, in one calm place.</h2>
+        <p>Stock that always adds up. Invoices that stay honest. A clear record of what was sold, returned and written off.</p>
+      </div>
+      <ul class="brand-points">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg>
+          <span>Live stock from every movement</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>
+          <span>Invoices locked once issued</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+          <span>Returns, damages and expiry tracked</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Form side -->
+    <section class="auth-panel">
+      <div class="auth-wrap">
+        <div class="mobile-brand">
+          <span class="mark">A</span>
+          <span class="wordmark">Allegderly</span>
+        </div>
+
+        <span class="eyebrow">Staff access</span>
+        <h1>Welcome back</h1>
+        <p class="lede">Sign in to continue to your workspace.</p>
+
+        <div class="bezel">
+          <div class="bezel-core">
+            <form method="post" novalidate>
+              {% csrf_token %}
+              {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+              {% if form.non_field_errors %}
+              <div class="form-error" role="alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.2v.1"/></svg>
+                <span>{{ form.non_field_errors.0 }}</span>
+              </div>
+              {% endif %}
+
+              <div class="field">
+                <label for="{{ form.username.id_for_label }}">Username</label>
+                <div class="input{% if form.username.errors %} has-error{% endif %}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>
+                  <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="e.g. bilal…">
+                </div>
+                {% for error in form.username.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+              </div>
+
+              <div class="field">
+                <label for="{{ form.password.id_for_label }}">Password</label>
+                <div class="input{% if form.password.errors %} has-error{% endif %}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
+                  <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}" autocomplete="current-password" spellcheck="false" required placeholder="Your password…">
+                  <button type="button" class="reveal" id="reveal" aria-label="Show password" aria-pressed="false">
+                    <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>
+                    <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16M10 6a9 9 0 0 1 2-.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3 3.8M6.5 7.7A15.6 15.6 0 0 0 2.5 12S6 18.5 12 18.5a9 9 0 0 0 3.2-.6"/><path d="M9.9 9.9a2.8 2.8 0 0 0 4 4"/></svg>
+                  </button>
+                </div>
+                {% for error in form.password.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+              </div>
+
+              <button type="submit" class="submit">
+                <span>Sign in</span>
+                <span class="submit-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></svg>
+                </span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <p class="foot">Access is limited to authorised staff. After repeated failed attempts, sign-in is paused for an hour.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      /* Autofocus only with a mouse: on a phone it pops the keyboard up and
+         hides half the page before the user has read anything. */
+      var username = document.getElementById('{{ form.username.id_for_label }}');
+      if (username && !username.value && window.matchMedia('(pointer: fine)').matches) username.focus();
+    })();
+    (function () {
+      var btn = document.getElementById('reveal');
+      var input = document.getElementById('{{ form.password.id_for_label }}');
+      if (!btn || !input) return;
+      btn.addEventListener('click', function () {
+        var show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+        btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        btn.classList.toggle('on', show);
+      });
+    })();
+  </script>
 </body>
 </html>

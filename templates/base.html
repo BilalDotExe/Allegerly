@@ -4,24 +4,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2f5f3">
   <title>{% block title %}Allegderly{% endblock %}</title>
+  <link rel="preload" href="{% static 'vendor/fonts/geist-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/flatpickr/flatpickr.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/datepicker.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/mobile.css' %}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to main content</a>
 
   {% include "partials/_navbar.html" %}
 
   <div class="app-layout">
       {% include "partials/_sidebar.html" %}
-      <main class="app-main">
+      <main class="app-main" id="main" tabindex="-1">
         {% include "partials/_alerts.html" %}
         {% block content %}{% endblock %}
       </main>
   </div>
 
   <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'vendor/flatpickr/flatpickr.min.js' %}"></script>
+  <script src="{% static 'js/datepicker-init.js' %}"></script>
+  <script src="{% static 'js/table-labels.js' %}"></script>
+  <script src="{% static 'js/form-guard.js' %}"></script>
+  <script src="{% static 'js/employee-password.js' %}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

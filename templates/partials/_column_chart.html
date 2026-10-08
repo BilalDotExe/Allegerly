@@ -1,0 +1,26 @@
+{% if chart.has_data %}
+<div class="col-chart{% if chart.dense %} is-dense{% endif %}{% if chart.stacked %} is-stacked{% endif %}">
+  <div class="cc-axis" aria-hidden="true">{% for t in chart.ticks %}<span style="bottom: {{ t.pct }}%">{{ t.label }}</span>{% endfor %}</div>
+  <div class="cc-plot">
+    <div class="cc-grid" aria-hidden="true">{% for t in chart.ticks %}<i style="bottom: {{ t.pct }}%"></i>{% endfor %}</div>
+    <div class="cc-cols">
+      {% for col in chart.cols %}
+      <div class="cc-col{% if col.current %} is-current{% endif %}{% if col.flip %} tip-left{% endif %}" tabindex="0" aria-label="{{ col.full }}, total {{ col.total }}">
+        <div class="cc-tip" role="tooltip">
+          <strong>{{ col.full }}</strong>
+          {% for bar in col.bars %}<span class="tip-row"><i class="dot tone-{{ bar.tone }}"></i>{{ bar.label }}<b>{{ bar.value }}</b></span>{% endfor %}
+          {% if chart.stacked %}<span class="tip-row tip-total">Total<b>{{ col.total }}</b></span>{% endif %}
+        </div>
+        <div class="cc-bars">
+          {% for bar in col.bars %}<span class="cc-bar tone-{{ bar.tone }}{% if bar.empty %} is-empty{% endif %}" style="height: {{ bar.pct }}%"></span>{% endfor %}
+        </div>
+        <div class="cc-label">{{ col.label }}{% if col.sub %}<small>{{ col.sub }}</small>{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% if chart.legend|length > 1 %}<div class="chart-legend">{% for l in chart.legend %}<span><i class="dot tone-{{ l.tone }}"></i>{{ l.label }}</span>{% endfor %}</div>{% endif %}
+{% else %}
+<div class="empty-state chart-empty"><span class="empty-mark">–</span><span><strong>{{ empty_title|default:"Nothing to chart yet" }}</strong><small>{{ empty_text|default:"Data will appear here as it is recorded." }}</small></span></div>
+{% endif %}

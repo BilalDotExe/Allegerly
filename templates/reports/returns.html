@@ -37,12 +37,13 @@
     <thead><tr><th scope="col">Date</th><th scope="col">Item</th><th scope="col">Customer</th><th scope="col">Invoice</th><th scope="col" class="text-end">Quantity</th><th scope="col">Restockable</th><th scope="col">Note</th></tr></thead>
     <tbody>
       {% for record in records %}
-      <tr><td class="cell-date">{{ record.date_returned }}</td><td class="cell-strong">{{ record.invoice_line.item.name }}</td><td>{{ record.invoice_line.invoice.customer.name }}</td><td class="cell-link">{{ record.invoice_line.invoice.invoice_number }}</td><td class="text-end cell-money">{{ record.quantity }}</td><td><span class="status-pill {% if record.is_restockable %}status-pill-active{% else %}status-pill-inactive{% endif %}">{{ record.is_restockable|yesno:"Yes,No" }}</span></td><td class="cell-note">{{ record.note|default:"-" }}</td></tr>
+      <tr><td class="cell-date">{{ record.date_returned|date:"M j, Y" }}</td><td class="cell-strong">{{ record.invoice_line.item.name }}</td><td>{{ record.invoice_line.invoice.customer.name }}</td><td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' record.invoice_line.invoice.pk %}">{{ record.invoice_line.invoice.invoice_number }}</a></td><td class="text-end cell-money">{{ record.quantity }}</td><td><span class="status-pill {% if record.is_restockable %}status-pill-active{% else %}status-pill-inactive{% endif %}">{{ record.is_restockable|yesno:"Yes,No" }}</span></td><td class="cell-note">{{ record.note|default:"—" }}</td></tr>
       {% empty %}
       <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No returns found</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 </section>
+{% include "partials/_pagination.html" %}
 <a class="page-back" href="{% url 'reports:index' %}">← Back to Reports</a>
 {% endblock %}

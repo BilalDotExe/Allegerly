@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from core.pagination import PAGE_SIZE
 from django.shortcuts import redirect, render
 
 from reports.forms import DateRangeForm
@@ -38,7 +39,7 @@ def return_list(request):
               record.quantity, record.is_restockable, record.note] for record in records],
         )
 
-    page_obj = Paginator(records, 25).get_page(request.GET.get("page"))
+    page_obj = Paginator(records, PAGE_SIZE).get_page(request.GET.get("page"))
     query = request.GET.copy()
     query.pop("page", None)
     return render(request, "returns/list.html", {
