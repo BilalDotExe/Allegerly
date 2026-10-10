@@ -2,16 +2,20 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+
+from businesses.db import atomic
 from django.db.models import DecimalField, ExpressionWrapper, F, Sum, Value
 from django.db.models.functions import Coalesce
 
+from core.models import CompanyProfile
 from core.money import money, zero_money
 from customers.models import Customer
 from inventory.models import Item
 
 _LINE_TOTAL = ExpressionWrapper(
-    F('quantity') * F('unit_price'),
+    F('quantity') * F('unit_price') * (Value(Decimal('100')) - F('discount_percent')) / Value(Decimal('100')),
     output_field=DecimalField(max_digits=14, decimal_places=2),
 )
 _ZERO = Value(Decimal('0.00'), output_field=DecimalField(max_digits=14, decimal_places=2))
@@ -20,10 +24,12 @@ _ZERO = Value(Decimal('0.00'), output_field=DecimalField(max_digits=14, decimal_
 _LOCKED_INVOICE_FIELDS = (
     'customer_id',
     'invoice_number',
+    'payment_terms',
     'tax_percent',
     'issue_date',
     'due_date',
     'notes',
+    'payment_instructions',
     'created_by_id',
 )
 
@@ -64,19 +70,42 @@ class Invoice(models.Model):
         ('voided', 'Voided'),
     ]
 
+    TERMS_ON_RECEIPT = 'due_on_receipt'
+    TERMS_NET_15 = 'net_15'
+    TERMS_NET_30 = 'net_30'
+    TERMS_NET_45 = 'net_45'
+    TERMS_NET_60 = 'net_60'
+    TERMS_CHOICES = [
+        (TERMS_ON_RECEIPT, 'Due on receipt'),
+        (TERMS_NET_15, 'Net 15'),
+        (TERMS_NET_30, 'Net 30'),
+        (TERMS_NET_45, 'Net 45'),
+        (TERMS_NET_60, 'Net 60'),
+    ]
+
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='invoices')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
     invoice_number = models.CharField(max_length=50, unique=True, blank=True)
+    payment_terms = models.CharField(max_length=20, choices=TERMS_CHOICES, default=TERMS_NET_30)
     tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
     issue_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
+    # None means "never set": a new invoice then copies the company default (see save()).
+    payment_instructions = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at', 'id']
+
+    @property
+    def effective_payment_instructions(self):
+        """This invoice's own text; invoices that predate the field use the company default."""
+        if self.payment_instructions is not None:
+            return self.payment_instructions
+        return CompanyProfile.load().payment_instructions
 
     def clean(self):
         if self.tax_percent is not None and self.tax_percent < 0:
@@ -87,8 +116,10 @@ class Invoice(models.Model):
 
     def save(self, *args, **kwargs):
         creating = self.pk is None
+        if creating and self.payment_instructions is None:
+            self.payment_instructions = CompanyProfile.load().payment_instructions
         if creating and not self.invoice_number:
-            with transaction.atomic():
+            with atomic():
                 self.invoice_number = _next_sequential_code(Invoice, 'invoice_number', 'INV-')
                 self.full_clean()
                 super().save(*args, **kwargs)
@@ -113,7 +144,9 @@ class Invoice(models.Model):
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError('Invoices cannot be deleted. Void them instead.')
+        if self.status != 'draft':
+            raise ValidationError('Only draft invoices can be deleted. Void issued invoices instead.')
+        super().delete(*args, **kwargs)
 
     @property
     def subtotal(self):
@@ -167,10 +200,23 @@ class InvoiceLine(models.Model):
     item = models.ForeignKey('inventory.Item', on_delete=models.PROTECT, related_name='invoice_lines')
     quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal('0.00'), blank=True,
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))],
+    )
 
     @property
     def line_total(self):
-        return self.quantity * self.unit_price
+        return money(self.quantity * self.unit_price * (Decimal('100') - (self.discount_percent or Decimal('0'))) / Decimal('100'))
+
+    def credit_amount_for(self, quantity):
+        """What `quantity` units of this line are worth as a credit.
+
+        Prorated from line_total rather than from unit_price, so the discount
+        is carried through and a full-quantity credit equals exactly what the
+        line billed — never more.
+        """
+        return money(self.line_total * Decimal(quantity) / Decimal(self.quantity))
 
     @property
     def returned_qty(self):
@@ -244,6 +290,13 @@ class CreditNote(models.Model):
         null=True,
         blank=True,
     )
+    damage_report = models.OneToOneField(
+        'damages.DamageReport',
+        on_delete=models.PROTECT,
+        related_name='credit_note',
+        null=True,
+        blank=True,
+    )
     credit_number = models.CharField(max_length=50, unique=True, blank=True)
     reason = models.CharField(max_length=255, blank=True, null=True, help_text="Optional free-text reason")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -266,7 +319,7 @@ class CreditNote(models.Model):
             self.remaining_amount = money(self.remaining_amount)
         self.is_applied = self.remaining_amount == zero_money()
         if creating and not self.credit_number:
-            with transaction.atomic():
+            with atomic():
                 self.credit_number = _next_sequential_code(CreditNote, 'credit_number', 'CN-')
                 super().save(*args, **kwargs)
             return

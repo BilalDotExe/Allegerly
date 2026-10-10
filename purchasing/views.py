@@ -1,10 +1,11 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.models import CompanyProfile
 from core.pagination import paginate
+from core.permissions import ALL_GROUPS, group_required
 from reports.utils import export_csv
 from .forms import (
     CancelOrderForm,
@@ -31,7 +32,7 @@ def _error_text(exc):
     return " ".join(exc.messages)
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def po_list(request):
     orders = PurchaseOrder.objects.select_related("vendor").prefetch_related("payments")
     form = PurchaseOrderFilterForm(request.GET or None)
@@ -63,7 +64,7 @@ def po_list(request):
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def po_create(request):
     initial = {}
     if request.GET.get("vendor", "").isdigit():
@@ -81,7 +82,7 @@ def po_create(request):
     return render(request, "purchasing/form.html", {"form": form, "formset": formset, "title": "New Purchase Order"})
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def po_detail(request, pk):
     po = get_object_or_404(PurchaseOrder.objects.select_related("vendor", "created_by"), pk=pk)
     return render(request, "purchasing/detail.html", {
@@ -92,7 +93,7 @@ def po_detail(request, pk):
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def po_edit(request, pk):
     po = get_object_or_404(PurchaseOrder, pk=pk)
     if not po.is_editable:
@@ -113,7 +114,7 @@ def po_edit(request, pk):
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def po_place(request, pk):
     po = get_object_or_404(PurchaseOrder, pk=pk)
     if request.method == "POST":
@@ -125,7 +126,7 @@ def po_place(request, pk):
     return redirect("purchasing:detail", pk=pk)
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def po_receive(request, pk):
     po = get_object_or_404(PurchaseOrder.objects.select_related("vendor"), pk=pk)
     if not po.can_receive:
@@ -162,7 +163,7 @@ def po_receive(request, pk):
     return render(request, "purchasing/receive.html", {"po": po, "header": header, "line_forms": line_forms})
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def po_close(request, pk):
     po = get_object_or_404(PurchaseOrder, pk=pk)
     if request.method == "POST":
@@ -174,7 +175,7 @@ def po_close(request, pk):
     return redirect("purchasing:detail", pk=pk)
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 @permission_required("purchasing.change_purchaseorder", raise_exception=True)
 def po_cancel(request, pk):
     po = get_object_or_404(PurchaseOrder, pk=pk)
@@ -189,7 +190,7 @@ def po_cancel(request, pk):
     return render(request, "purchasing/cancel_form.html", {"form": form, "po": po})
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def po_payment(request, pk):
     po = get_object_or_404(PurchaseOrder, pk=pk)
     if po.status in ("draft", "cancelled") or po.balance_due <= 0:
@@ -215,7 +216,7 @@ def po_payment(request, pk):
     return render(request, "purchasing/payment_form.html", {"form": form, "po": po})
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def po_print(request, pk):
     po = get_object_or_404(PurchaseOrder.objects.select_related("vendor", "created_by"), pk=pk)
     if po.status in ("draft", "cancelled"):

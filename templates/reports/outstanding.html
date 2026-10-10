@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load money_filters %}
+﻿{% extends "base.html" %}{% load money_filters %}
 {% block title %}Outstanding Invoices | Allegderly{% endblock %}
 {% block content %}
 {% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Outstanding Invoices" subtitle="Unpaid invoices and how overdue they are." %}
@@ -13,7 +13,7 @@
       {% for invoice in invoices %}
       <tr><td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' invoice.pk %}">{{ invoice.invoice_number }}</a></td><td class="cell-strong">{{ invoice.customer.name }}</td><td class="cell-date">{{ invoice.issue_date|date:"M j, Y"|default:"—" }}</td><td class="cell-date">{{ invoice.due_date|date:"M j, Y"|default:"—" }}</td><td class="text-end cell-money">{{ invoice.total|usd }}</td><td class="text-end cell-balance">{{ invoice.balance_due|usd }}</td><td class="text-end cell-money">{{ invoice.days_overdue|default_if_none:"—" }}</td><td>{{ invoice.bucket }}</td></tr>
       {% empty %}
-      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No outstanding invoices found</strong><small>Try a different date range.</small></span></div></td></tr>
+      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No outstanding invoices found</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

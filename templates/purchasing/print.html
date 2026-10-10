@@ -74,6 +74,7 @@
     {% if po.notes %}<p class="inv-notes"><strong>Notes:</strong> {{ po.notes }}</p>{% endif %}
 
     <section class="totals">
+      <div><span>Payment terms</span><span>{{ po.vendor.get_payment_terms_display }}</span></div>
       <div><span>Subtotal</span><span>{{ po.subtotal|usd }}</span></div>
       <div><span>Tax ({{ po.tax_percent }}%)</span><span>{{ po.tax_amount|usd }}</span></div>
       <div><span>Shipping / other</span><span>{{ po.shipping_cost|usd }}</span></div>

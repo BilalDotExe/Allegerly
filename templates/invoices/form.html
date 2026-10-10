@@ -2,14 +2,20 @@
 {% block title %}{{ title }} | Allegderly{% endblock %}
 {% block content %}
 <h1 class="form-page-title">{{ title }}</h1>
-<div class="row"><div class="col-xl-9">
+<div class="row"><div class="col-12">
 <form method="post" class="app-form invoice-form">{% csrf_token %}
   {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
 
   <div class="card mb-3"><div class="card-body">
     <h2 class="card-section-title">Invoice details</h2>
     <div class="row g-3">
-      {% for field in form %}<div class="col-md-6">{% include "partials/_form_field.html" %}</div>{% endfor %}
+      <div class="col-md-6">{% include "partials/_form_field.html" with field=form.customer %}</div>
+      <div class="col-md-3">{% include "partials/_form_field.html" with field=form.payment_terms %}</div>
+      <div class="col-md-3">{% include "partials/_form_field.html" with field=form.tax_percent %}</div>
+      <div class="col-md-3">{% include "partials/_form_field.html" with field=form.issue_date %}</div>
+      <div class="col-md-3">{% include "partials/_form_field.html" with field=form.due_date %}</div>
+      <div class="col-md-6">{% include "partials/_form_field.html" with field=form.payment_instructions %}</div>
+      <div class="col-12">{% include "partials/_form_field.html" with field=form.notes %}</div>
     </div>
   </div></div>
 
@@ -17,11 +23,12 @@
     <h2 class="card-section-title">Line items</h2>
     {{ formset.management_form }}
     {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
-    <div class="table-responsive line-items-wrap mb-3"><table class="table line-items" id="invoice-lines"><thead><tr><th>Item</th><th>Quantity</th><th>Unit price</th><th>Delete</th></tr></thead><tbody>
+    <div class="table-responsive line-items-wrap mb-3"><table class="table line-items" id="invoice-lines"><thead><tr><th>Item</th><th>Quantity</th><th>Unit price</th><th>Discount %</th><th>Delete</th></tr></thead><tbody>
       {% for line_form in formset %}<tr class="line-row">{% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}
         <td>{{ line_form.item }}{{ line_form.item.errors }}</td>
         <td>{{ line_form.quantity }}{{ line_form.quantity.errors }}{{ line_form.non_field_errors }}</td>
         <td>{{ line_form.unit_price }}{{ line_form.unit_price.errors }}</td>
+        <td class="line-discount-cell"><div class="discount-stepper"><button type="button" class="disc-btn disc-minus" tabindex="-1" aria-label="Decrease discount">−</button>{{ line_form.discount_percent }}{{ line_form.discount_percent.errors }}<button type="button" class="disc-btn disc-plus" tabindex="-1" aria-label="Increase discount">+</button></div></td>
         <td>{% if line_form.DELETE %}<div class="form-check">{{ line_form.DELETE }}</div>{% endif %}</td></tr>{% endfor %}
     </tbody></table></div>
     <button type="button" class="btn btn-outline-primary" id="add-line">Add line</button>
@@ -34,7 +41,22 @@
 {% block extra_js %}
 {{ wholesale_customer_ids|json_script:"wholesale-customer-ids" }}
 <script>
-(function(){const add=document.getElementById('add-line'), body=document.querySelector('#invoice-lines tbody'), total=document.getElementById('id_lines-TOTAL_FORMS'); if(!add||!body||!total)return; add.addEventListener('click',function(){const index=Number(total.value), rows=body.querySelectorAll('.line-row'), template=rows[rows.length-1].cloneNode(true); template.querySelectorAll('input,select,textarea,label').forEach(function(el){if(el.name)el.name=el.name.replace(/-\d+-/g,'-'+index+'-');if(el.id)el.id=el.id.replace(/-\d+-/g,'-'+index+'-');if(el.htmlFor)el.htmlFor=el.htmlFor.replace(/-\d+-/g,'-'+index+'-');if(el.type==='checkbox')el.checked=false;else if(el.tagName==='SELECT')el.selectedIndex=0;else if(el.type!=='hidden')el.value='';}); body.appendChild(template);total.value=index+1;});})();
+(function(){const add=document.getElementById('add-line'), body=document.querySelector('#invoice-lines tbody'), total=document.getElementById('id_lines-TOTAL_FORMS'); if(!add||!body||!total)return; add.addEventListener('click',function(){const index=Number(total.value), rows=body.querySelectorAll('.line-row'), template=rows[rows.length-1].cloneNode(true); template.querySelectorAll('input,select,textarea,label').forEach(function(el){if(el.name)el.name=el.name.replace(/-\d+-/g,'-'+index+'-');if(el.id)el.id=el.id.replace(/-\d+-/g,'-'+index+'-');if(el.htmlFor)el.htmlFor=el.htmlFor.replace(/-\d+-/g,'-'+index+'-');if(el.type==='checkbox')el.checked=false;else if(el.tagName==='SELECT')el.selectedIndex=0;else if(el.type!=='hidden')el.value=(el.name||'').indexOf('discount_percent')!==-1?'0':'';}); body.appendChild(template);total.value=index+1;});})();
+(function(){
+  var table=document.getElementById('invoice-lines');
+  if(!table)return;
+  /* Prevent mouse-wheel from changing discount inputs */
+  table.addEventListener('wheel',function(e){if(e.target.type==='number'&&document.activeElement===e.target)e.preventDefault();},{passive:false});
+  /* +/- stepper buttons */
+  table.addEventListener('click',function(e){
+    var btn=e.target.closest('.disc-btn');if(!btn)return;
+    var inp=btn.closest('.line-row').querySelector('input[name*="discount_percent"]');if(!inp)return;
+    var v=parseFloat(inp.value)||0, s=parseFloat(inp.step)||0.5;
+    if(btn.classList.contains('disc-minus'))v=Math.max(0,Math.round((v-s)*100)/100);
+    else v=Math.min(100,Math.round((v+s)*100)/100);
+    inp.value=v;
+  });
+})();
 (function(){
   /* json_script escapes the payload properly instead of pasting a Python repr
      straight into the script body. */

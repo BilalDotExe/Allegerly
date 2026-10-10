@@ -1,6 +1,7 @@
-{% extends "base.html" %}{% load money_filters %}
+﻿{% extends "base.html" %}{% load money_filters %}
 {% block title %}{{ invoice.invoice_number }} | Allegderly{% endblock %}
 {% block content %}
+<a href="{% url 'invoices:list' %}" class="page-back page-back-top">← Back to Invoices</a>
 <div class="page-heading detail-heading">
   <div>
     <div class="eyebrow">BILLING</div>
@@ -13,6 +14,7 @@
   <div class="page-actions">
     {% if invoice.status == 'draft' %}
       <form method="post" action="{% url 'invoices:issue' invoice.pk %}" data-confirm="Issue {{ invoice.invoice_number }}? Once issued the customer, lines and prices are locked, and mistakes can only be fixed by voiding it.">{% csrf_token %}<button class="btn btn-success app-primary-button" type="submit">Issue Invoice</button></form>
+      {% if perms.invoices.delete_invoice %}<form method="post" action="{% url 'invoices:delete' invoice.pk %}" data-confirm="Permanently delete draft {{ invoice.invoice_number }}? This cannot be undone.">{% csrf_token %}<button class="btn btn-outline-danger" type="submit">Delete Draft</button></form>{% endif %}
     {% elif invoice.status == 'issued' or invoice.status == 'paid' %}
       <a class="btn btn-outline-secondary" href="{% url 'invoices:print' invoice.pk %}">View Full Invoice</a>
       {% if invoice.balance_due > 0 %}<a class="btn btn-primary app-primary-button" href="{% url 'invoices:payment' invoice.pk %}">Record Payment</a>{% endif %}
@@ -27,8 +29,10 @@
       <p><strong>Customer:</strong> <a href="{% url 'customers:detail' invoice.customer.pk %}">{{ invoice.customer.name }}</a></p>
       <p><strong>Issue date:</strong> {{ invoice.issue_date|date:"M j, Y"|default:"—" }} &nbsp; <strong>Due date:</strong> {{ invoice.due_date|date:"M j, Y"|default:"—" }}</p>
       <p><strong>Notes:</strong> {{ invoice.notes|default:"—" }}</p>
+      <p><strong>Payment instructions:</strong><br>{{ invoice.effective_payment_instructions|linebreaksbr|default:"—" }}</p>
     </div>
     <div class="col-md-6">
+      <p><strong>Payment terms:</strong> {{ invoice.get_payment_terms_display }}</p>
       <p><strong>Subtotal:</strong> {{ invoice.subtotal|usd }}</p>
       <p><strong>Tax ({{ invoice.tax_percent|floatformat:"-2" }}%):</strong> {{ invoice.tax_amount|usd }}</p>
       <p><strong>Total:</strong> {{ invoice.total|usd }}</p>
@@ -42,10 +46,10 @@
 <section class="table-panel" aria-label="Line items">
   <div class="table-heading"><div><h2>Line items</h2><p>What was sold on this invoice</p></div></div>
   <div class="table-responsive"><table class="table data-table">
-    <thead><tr><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col" class="text-end">Unit price</th><th scope="col" class="text-end">Line total</th></tr></thead>
+    <thead><tr><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col" class="text-end">Unit price</th>{% if has_discounts %}<th scope="col" class="text-end">Discount</th>{% endif %}<th scope="col" class="text-end">Line total</th></tr></thead>
     <tbody>
-      {% for line in lines %}<tr><td class="cell-strong">{{ line.item.name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end cell-money">{{ line.unit_price|usd }}</td><td class="text-end cell-balance">{{ line.line_total|usd }}</td></tr>
-      {% empty %}<tr><td colspan="4"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No line items</strong><small>Edit the invoice to add items.</small></span></div></td></tr>{% endfor %}
+      {% for line in lines %}<tr><td class="cell-strong">{{ line.item.name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end cell-money">{{ line.unit_price|usd }}</td>{% if has_discounts %}<td class="text-end">{% if line.discount_percent %}{{ line.discount_percent|floatformat:"-2" }}%{% else %}—{% endif %}</td>{% endif %}<td class="text-end cell-balance">{{ line.line_total|usd }}</td></tr>
+      {% empty %}<tr><td colspan="{% if has_discounts %}5{% else %}4{% endif %}"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No line items</strong><small>Edit the invoice to add items.</small></span></div></td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>
@@ -56,7 +60,7 @@
     <thead><tr><th scope="col">Date</th><th scope="col">Method</th><th scope="col" class="text-end">Amount</th><th scope="col">Note</th></tr></thead>
     <tbody>
       {% for payment in payments %}<tr><td class="cell-date">{{ payment.payment_date|date:"M j, Y" }}</td><td>{{ payment.get_method_display }}</td><td class="text-end cell-money">{{ payment.amount|usd }}</td><td class="cell-note">{{ payment.note|default:"—" }}</td></tr>
-      {% empty %}<tr><td colspan="4"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No payments recorded</strong><small>Use Record Payment when the customer pays.</small></span></div></td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="4"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No payments recorded</strong><small>Use Record Payment when the customer pays.</small></span></div></td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>
@@ -67,7 +71,7 @@
     <thead><tr><th scope="col">Credit #</th><th scope="col" class="text-end">Amount</th><th scope="col" class="text-end">Remaining</th></tr></thead>
     <tbody>
       {% for credit in credit_notes %}<tr><td><a class="table-primary-link cell-link" href="{% url 'invoices:credit_detail' credit.pk %}">{{ credit.credit_number }}</a></td><td class="text-end cell-money">{{ credit.amount|usd }}</td><td class="text-end cell-balance">{{ credit.remaining_amount|usd }}</td></tr>
-      {% empty %}<tr><td colspan="3"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No linked credit notes</strong><small>Credits appear here when a return is recorded.</small></span></div></td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="3"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No linked credit notes</strong><small>Credits appear here when a return is recorded.</small></span></div></td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>

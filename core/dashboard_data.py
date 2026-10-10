@@ -8,7 +8,8 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from core.charts import (
-    column_chart, delta, fmt_money, month_key, month_starts, rank_bars, segments, sparkline,
+    column_chart, delta, fmt_money, line_chart, month_key, month_starts, profit_chart,
+    rank_bars, segments, sparkline,
 )
 from core.money import money
 from damages.models import DamageReport
@@ -16,7 +17,7 @@ from inventory.models import ExpiryWriteOff, Item
 from invoices.models import (
     _LINE_TOTAL, CreditApplication, CreditNote, Invoice, InvoiceLine, Payment,
 )
-from purchasing.models import PurchaseOrder
+from purchasing.models import PurchaseOrder, PurchasePayment
 from returns.models import ReturnRecord
 
 RANGES = (3, 6, 12)
@@ -131,13 +132,19 @@ def build_dashboard(range_months=6, today=None):
     sales = _by_month((r["issue_date"], r["total"]) for r in rows if r["issue_date"])
 
     # ---- Cash flow ----
+    # money_in doubles as the Sales line: "sales collected" is just payments
+    # received against invoices, grouped by the month the money landed.
     money_in = _by_month(
         Payment.objects.filter(is_voided=False, payment_date__gte=start)
         .values_list("payment_date", "amount")
     )
-    money_out = _by_month(
+    refunds_out = _by_month(
         CreditNote.objects.filter(is_refunded=True, refund_date__gte=start)
         .values_list("refund_date", "amount")
+    )
+    purchases_out = _by_month(
+        PurchasePayment.objects.filter(payment_date__gte=start)
+        .values_list("payment_date", "amount")
     )
 
     # ---- Losses ----
@@ -155,6 +162,13 @@ def build_dashboard(range_months=6, today=None):
             return_record__isnull=False, created_at__date__gte=start
         ).values_list("created_at", "amount")
     )
+
+    # ---- Profit / loss (sales collected - purchases - losses, per month) ----
+    profit = {}
+    for m in months:
+        k = month_key(m)
+        losses_k = damage.get(k, ZERO) + expiry.get(k, ZERO) + returns.get(k, ZERO)
+        profit[k] = money_in.get(k, ZERO) - purchases_out.get(k, ZERO) - losses_k
 
     # ---- Receivables ageing ----
     ageing_items, receivables, overdue = _ageing(rows, today)
@@ -213,20 +227,16 @@ def build_dashboard(range_months=6, today=None):
         "range_months": range_months,
         "ranges": RANGES,
         "kpis": kpis,
-        "sales_chart": column_chart(
-            months, [{"key": "sales", "label": "Invoiced", "tone": "accent", "values": sales}],
+        "sales_chart": line_chart(
+            months, [{"key": "sales", "label": "Collected", "tone": "accent", "values": money_in}],
             today=today),
         "cash_chart": column_chart(
             months,
             [{"key": "in", "label": "Money in", "tone": "accent", "values": money_in},
-             {"key": "out", "label": "Refunds out", "tone": "muted", "values": money_out}],
+             {"key": "pur", "label": "Purchases out", "tone": "muted", "values": purchases_out},
+             {"key": "ref", "label": "Refunds out", "tone": "warn", "values": refunds_out}],
             today=today),
-        "loss_chart": column_chart(
-            months,
-            [{"key": "dmg", "label": "Damaged", "tone": "warn", "values": damage},
-             {"key": "exp", "label": "Expired", "tone": "bad", "values": expiry},
-             {"key": "ret", "label": "Returned", "tone": "muted", "values": returns}],
-            stacked=True, today=today),
+        "profit_chart": profit_chart(months, profit, today=today),
         "ageing_bars": rank_bars(ageing_items),
         "receivables_total": fmt_money(receivables),
         "top_customers": rank_bars([

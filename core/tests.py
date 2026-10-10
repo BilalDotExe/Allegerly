@@ -179,6 +179,74 @@ class ChartHelperTests(TestCase):
         self.assertIsNone(sparkline([0, 0, 0]))
         self.assertIsNone(delta(5, 0))
 
+    def test_axis_ticks_stop_at_zero_when_nothing_is_negative(self):
+        from core.charts import axis_ticks
+        self.assertEqual(axis_ticks(100, 0), [100, 75, 50, 25, 0])
+        self.assertEqual(axis_ticks(100, 30), [100, 75, 50, 25, 0])  # positive values never lower it
+
+    def test_axis_ticks_extend_below_zero_in_whole_steps(self):
+        from core.charts import axis_ticks
+        self.assertEqual(axis_ticks(100, -50), [100, 75, 50, 25, 0, -25, -50])
+        self.assertEqual(axis_ticks(100, -1), [100, 75, 50, 25, 0, -25])  # rounds the step down, not up
+
+    def test_column_chart_floor_stays_zero_without_negative_values(self):
+        from datetime import date
+        from decimal import Decimal
+        from core.charts import column_chart
+        months = [date(2026, 1, 1), date(2026, 2, 1)]
+        series = [{"key": "a", "label": "A", "tone": "accent",
+                   "values": {(2026, 1): Decimal("100"), (2026, 2): Decimal("50")}}]
+        chart = column_chart(months, series)
+        self.assertEqual(chart["ticks"][-1]["pct"], 0)
+        self.assertEqual(chart["ticks"][-1]["label"], "$0")
+        self.assertTrue(chart["ticks"][-1]["zero"])
+        self.assertEqual(chart["zero_pct"], 0)
+        self.assertEqual(chart["cols"][1]["bars"][0]["pct"], 50)  # unchanged vs. pre-floor math
+
+    def test_column_chart_extends_below_zero_for_a_negative_value(self):
+        from datetime import date
+        from decimal import Decimal
+        from core.charts import column_chart
+        months = [date(2026, 1, 1), date(2026, 2, 1)]
+        series = [{"key": "a", "label": "A", "tone": "accent",
+                   "values": {(2026, 1): Decimal("100"), (2026, 2): Decimal("-50")}}]
+        chart = column_chart(months, series)
+        self.assertEqual(chart["ticks"][-1]["pct"], 0)
+        self.assertTrue(any(t["zero"] for t in chart["ticks"]))
+        self.assertGreater(chart["zero_pct"], 0)  # zero line now sits above the container floor
+        self.assertEqual(chart["cols"][1]["bars"][0]["pct"], 0)  # the negative value is the new floor
+
+    def test_line_chart_points_span_the_full_floor_to_ceiling_range(self):
+        from datetime import date
+        from decimal import Decimal
+        from core.charts import line_chart
+        months = [date(2026, 1, 1), date(2026, 2, 1), date(2026, 3, 1)]
+        series = [{"key": "a", "label": "A", "tone": "accent", "values": {
+            (2026, 1): Decimal("100"), (2026, 2): Decimal("-50"), (2026, 3): Decimal("25"),
+        }}]
+        chart = line_chart(months, series)
+        points = chart["points"].split(" ")
+        self.assertEqual(len(points), 3)
+        # The dip (month 2, most negative) should be the lowest point on screen (largest y).
+        ys = [float(p.split(",")[1]) for p in points]
+        self.assertEqual(ys.index(max(ys)), 1)
+
+    def test_profit_chart_bars_are_pinned_to_the_zero_line(self):
+        from datetime import date
+        from decimal import Decimal
+        from core.charts import profit_chart
+        months = [date(2026, 1, 1), date(2026, 2, 1)]
+        chart = profit_chart(months, {(2026, 1): Decimal("1000"), (2026, 2): Decimal("-500")})
+        zero = chart["zero_pct"]
+        self.assertGreater(zero, 0)  # a loss pushes the zero line up off the floor
+        profit, loss = chart["cols"]
+        self.assertTrue(profit["pos"])
+        self.assertFalse(loss["pos"])
+        # Profit grows up FROM the zero line; loss grows down TO it.
+        self.assertEqual(profit["bottom"], zero)
+        self.assertAlmostEqual(loss["bottom"] + loss["height"], zero, places=2)
+        self.assertEqual(loss["value"], "($500.00)")  # losses read as accounting parentheses
+
 
 from core.utils import format_us_phone
 
@@ -433,3 +501,46 @@ class EmployeeManagementViewTests(TestCase):
         self.assertTrue(User.objects.filter(pk=employee.pk).exists())
         shown = [str(m) for m in response.context['messages']]
         self.assertTrue(any('deactivate' in m.lower() for m in shown))
+
+
+class ViewOnlyWriteGuardTests(TestCase):
+    """Rule: ViewOnly is read-only everywhere, enforced by middleware."""
+
+    WRITE_URLS = (
+        'customers:create',
+        'vendors:create',
+        'inventory:create',
+        'inventory:expiry_create',
+        'invoices:create',
+        'purchasing:create',
+        'production:create',
+        'damages:create',
+        'returns:create',
+    )
+
+    def setUp(self):
+        self.user = User.objects.create_user('reader', password='test-pass-123')
+        self.user.groups.add(Group.objects.get(name=GROUP_VIEW_ONLY))
+        self.client.force_login(self.user)
+
+    def test_every_create_view_refuses_a_post(self):
+        for name in self.WRITE_URLS:
+            with self.subTest(url=name):
+                self.assertEqual(self.client.post(reverse(name), {}).status_code, 403)
+
+    def test_get_is_still_allowed(self):
+        self.assertEqual(self.client.get(reverse('customers:create')).status_code, 200)
+
+    def test_logout_still_works(self):
+        self.assertEqual(self.client.post(reverse('logout')).status_code, 302)
+
+    def test_staff_can_still_post(self):
+        self.user.groups.clear()
+        self.user.groups.add(Group.objects.get(name=GROUP_STAFF))
+        self.assertNotEqual(self.client.post(reverse('customers:create'), {}).status_code, 403)
+
+    def test_superuser_is_not_blocked_by_group_membership(self):
+        boss = User.objects.create_superuser('boss2', 'b2@x.com', 'test-pass-123')
+        boss.groups.add(Group.objects.get(name=GROUP_VIEW_ONLY))
+        self.client.force_login(boss)
+        self.assertNotEqual(self.client.post(reverse('customers:create'), {}).status_code, 403)

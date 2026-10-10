@@ -2,7 +2,7 @@
 <div class="col-chart{% if chart.dense %} is-dense{% endif %}{% if chart.stacked %} is-stacked{% endif %}">
   <div class="cc-axis" aria-hidden="true">{% for t in chart.ticks %}<span style="bottom: {{ t.pct }}%">{{ t.label }}</span>{% endfor %}</div>
   <div class="cc-plot">
-    <div class="cc-grid" aria-hidden="true">{% for t in chart.ticks %}<i style="bottom: {{ t.pct }}%"></i>{% endfor %}</div>
+    <div class="cc-grid" aria-hidden="true">{% for t in chart.ticks %}<i{% if t.zero %} class="is-zero"{% endif %} style="bottom: {{ t.pct }}%"></i>{% endfor %}</div>
     <div class="cc-cols">
       {% for col in chart.cols %}
       <div class="cc-col{% if col.current %} is-current{% endif %}{% if col.flip %} tip-left{% endif %}" tabindex="0" aria-label="{{ col.full }}, total {{ col.total }}">

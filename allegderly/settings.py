@@ -45,17 +45,20 @@ INSTALLED_APPS = [
     'production',
     'reports',
     'audit',
+    'businesses',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'businesses.middleware.BusinessMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'axes.middleware.AxesMiddleware',
+    'core.middleware.ViewOnlyWriteGuard',
 ]
 
 ROOT_URLCONF = 'allegderly.urls'
@@ -79,12 +82,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'allegderly.wsgi.application'
 
+# 'default' is the control database: the list of businesses, login sessions
+# and lockouts. Each business's own data lives in BUSINESS_DB_DIR/<code>.sqlite3
+# and is connected on demand (see businesses/db.py).
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'control.sqlite3',
     }
 }
+DATABASE_ROUTERS = ['businesses.router.BusinessRouter']
+BUSINESS_DB_DIR = BASE_DIR / 'business_dbs'
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

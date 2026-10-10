@@ -10,7 +10,19 @@
       {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
       <div class="card mb-3"><div class="card-body">
         <h2 class="card-section-title">Sign-in</h2>
-        <div class="mb-3">{% include "partials/_form_field.html" with field=form.username %}</div>
+        <div class="mb-3">
+          {% if form.suffix %}
+          <label class="form-label" for="{{ form.username.id_for_label }}">{{ form.username.label }} <span class="text-danger">*</span></label>
+          <div class="suffix-field-group">
+            {{ form.username }}
+            <span class="suffix-field-tag" id="username-suffix">@{{ form.suffix }}</span>
+          </div>
+          {% if form.username.help_text %}<div class="form-text">{{ form.username.help_text }}</div>{% endif %}
+          {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors|join:" " }}</div>{% endif %}
+          {% else %}
+          {% include "partials/_form_field.html" with field=form.username %}
+          {% endif %}
+        </div>
         <div class="row g-3">
           <div class="col-sm-6">{% include "partials/_form_field.html" with field=form.first_name %}</div>
           <div class="col-sm-6">{% include "partials/_form_field.html" with field=form.last_name %}</div>

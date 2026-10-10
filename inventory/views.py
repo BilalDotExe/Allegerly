@@ -134,14 +134,38 @@ def expiry_create(request):
 @login_required
 @permission_required("inventory.add_stockmovement", raise_exception=True)
 def stock_adjust(request):
-    form = StockAdjustmentForm(request.POST or None)
+    from damages.models import DamageReport
+
+    damage_report = None
+    damage_report_id = request.GET.get("damage_report") or request.POST.get("damage_report")
+    if damage_report_id:
+        damage_report = DamageReport.objects.filter(
+            pk=damage_report_id, stock_movement__isnull=True
+        ).select_related("item").first()
+
+    initial = {}
+    if damage_report and request.method == "GET":
+        initial = {
+            "item": damage_report.item_id,
+            "quantity": -damage_report.quantity,
+            "note": f"Damage report #{damage_report.pk} — {damage_report.item.name} x{damage_report.quantity}",
+        }
+
+    form = StockAdjustmentForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
-        adjust_stock(
-        item=form.cleaned_data["item"],
-        quantity=form.cleaned_data["quantity"],
-        reason=form.cleaned_data["note"],
-        created_by=request.user,
-    )
+        movement = adjust_stock(
+            item=form.cleaned_data["item"],
+            quantity=form.cleaned_data["quantity"],
+            reason=form.cleaned_data["note"],
+            created_by=request.user,
+        )
+        if damage_report:
+            damage_report.stock_movement = movement
+            damage_report.save(update_fields=["stock_movement"])
         messages.success(request, "Stock adjusted.")
         return redirect("inventory:list")
-    return render(request, "inventory/adjust.html", {"form": form, "title": "Manual Stock Adjustment"})
+    return render(request, "inventory/adjust.html", {
+        "form": form,
+        "title": "Manual Stock Adjustment",
+        "damage_report": damage_report,
+    })

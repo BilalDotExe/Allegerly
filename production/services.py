@@ -1,10 +1,10 @@
-from django.db import transaction
+from businesses.db import atomic
 from django.core.exceptions import ValidationError
 from .models import ProductionBatch
 from audit.services import log as audit_log
 
 
-@transaction.atomic
+@atomic
 def create_production_batch(item, quantity_produced, production_date, created_by, expiry_date=None, note='', request=None):
     if quantity_produced <= 0:
         raise ValidationError("Quantity produced must be positive.")

@@ -1,0 +1,24 @@
+{% if chart.has_data %}
+<div class="col-chart profit-chart{% if chart.dense %} is-dense{% endif %}">
+  <div class="cc-axis" aria-hidden="true">{% for t in chart.ticks %}<span style="bottom: {{ t.pct }}%">{{ t.label }}</span>{% endfor %}</div>
+  <div class="cc-plot">
+    <div class="cc-grid" aria-hidden="true">{% for t in chart.ticks %}<i{% if t.zero %} class="is-zero"{% endif %} style="bottom: {{ t.pct }}%"></i>{% endfor %}</div>
+    <div class="cc-cols">
+      {% for col in chart.cols %}
+      <div class="cc-col{% if col.current %} is-current{% endif %}{% if col.flip %} tip-left{% endif %}" tabindex="0" aria-label="{{ col.full }}, net {{ col.value }}">
+        <div class="cc-tip" role="tooltip">
+          <strong>{{ col.full }}</strong>
+          <span class="tip-row"><i class="dot tone-{% if col.pos %}ok{% else %}bad{% endif %}"></i>Net {% if col.pos %}profit{% else %}loss{% endif %}<b>{{ col.value }}</b></span>
+        </div>
+        <div class="cc-bars">
+          {% if not col.empty %}<span class="pc-bar tone-{% if col.pos %}ok{% else %}bad neg{% endif %}" style="bottom: {{ col.bottom }}%; height: {{ col.height }}%"></span><span class="pc-tag {% if col.pos %}above{% else %}below{% endif %}" style="bottom: {{ col.edge }}%">{{ col.value }}</span>{% endif %}
+        </div>
+        <div class="cc-label">{{ col.label }}{% if col.sub %}<small>{{ col.sub }}</small>{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="empty-state chart-empty"><span class="empty-mark">–</span><span><strong>{{ empty_title|default:"Nothing to chart yet" }}</strong><small>{{ empty_text|default:"Data will appear here as it is recorded." }}</small></span></div>
+{% endif %}

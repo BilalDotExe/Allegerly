@@ -2,6 +2,7 @@ from django import forms
 from django.utils import timezone
 from core.forms import BootstrapForm
 
+from invoices.forms import InvoiceLineChoiceField
 from invoices.models import InvoiceLine, Payment
 
 
@@ -11,7 +12,7 @@ class ReturnRecordForm(BootstrapForm):
         ("refund", "Refund directly"),
     ]
 
-    invoice_line = forms.ModelChoiceField(queryset=InvoiceLine.objects.none(), label="Invoice line")
+    invoice_line = InvoiceLineChoiceField(queryset=InvoiceLine.objects.none(), label="Invoice line")
     quantity = forms.IntegerField(min_value=1)
     date_returned = forms.DateField(
         initial=timezone.localdate,

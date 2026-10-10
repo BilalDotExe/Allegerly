@@ -17,6 +17,9 @@ env/
 # Django and local data
 db.sqlite3
 db.sqlite3-journal
+control.sqlite3
+control.sqlite3-journal
+business_dbs/
 media/
 staticfiles/
 backups/
@@ -36,3 +39,13 @@ htmlcov/
 .DS_Store
 Thumbs.db
 cursor rules.md
+
+# AI assistant and agent tooling files (generated, not app code)
+.agents/
+.claude/
+.cursor/
+.codex/
+.aider*
+.mcp.json
+CLAUDE.local.md
+CLAUDE.md

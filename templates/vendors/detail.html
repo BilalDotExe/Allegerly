@@ -1,9 +1,10 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load phone_filters money_filters %}
 
 {% block title %}{{ vendor.name }} | Allegderly{% endblock %}
 
 {% block content %}
+<a href="{% url 'vendors:list' %}" class="page-back page-back-top">← Back to Vendors</a>
 <div class="page-heading detail-heading">
   <div>
     <div class="eyebrow">PEOPLE</div>
@@ -14,7 +15,7 @@
     </div>
   </div>
   <div class="page-actions">
-    <a href="{% url 'purchasing:create' %}?vendor={{ vendor.pk }}" class="btn btn-primary app-primary-button"><span aria-hidden="true">＋</span> New Purchase Order</a>
+    <a href="{% url 'purchasing:create' %}?vendor={{ vendor.pk }}" class="btn btn-primary app-primary-button"><span aria-hidden="true"><svg><use href="#icon-plus"/></svg></span> New Purchase Order</a>
     <a href="{% url 'vendors:edit' vendor.pk %}" class="btn btn-outline-secondary">Edit</a>
   </div>
 </div>
@@ -46,7 +47,7 @@
     <thead><tr><th scope="col">Order</th><th scope="col">Status</th><th scope="col">Order date</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Balance due</th></tr></thead>
     <tbody>
       {% for po in recent_orders %}<tr><td><a class="table-primary-link cell-link" href="{% url 'purchasing:detail' po.pk %}">{{ po.po_number }}</a></td><td><div class="status-group"><span class="status-pill status-pill-{{ po.status }}">{{ po.get_status_display }}</span>{% if po.status != 'draft' and po.status != 'cancelled' %}<span class="status-pill status-pill-pay-{{ po.payment_status }}">{{ po.payment_status_display }}</span>{% endif %}</div></td><td class="cell-date">{{ po.order_date|date:"M j, Y" }}</td><td class="text-end cell-money">{{ po.total|usd }}</td><td class="text-end cell-balance">{% if po.status == 'cancelled' or po.status == 'draft' %}—{% else %}{{ po.balance_due|usd }}{% endif %}</td></tr>
-      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No purchase orders yet</strong><small>Use New Purchase Order to order from this vendor.</small></span></div></td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No purchase orders yet</strong><small>Use New Purchase Order to order from this vendor.</small></span></div></td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>

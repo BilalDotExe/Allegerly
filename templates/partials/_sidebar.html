@@ -1,16 +1,11 @@
 <aside class="app-sidebar d-none d-lg-flex">
-  <a class="sidebar-brand" href="{% url 'dashboard' %}">
-    <span class="brand-mark">A</span>
-    <span><strong>Allegderly</strong><small>Operations</small></span>
-  </a>
+  <div class="sidebar-crumbs">{% include "partials/_breadcrumbs.html" %}</div>
   {% include "partials/_nav_links.html" %}
 </aside>
 
-<div class="offcanvas offcanvas-start mobile-sidebar" tabindex="-1" id="mobileNavigation" aria-labelledby="mobileNavigationLabel">
+<div class="offcanvas offcanvas-start mobile-sidebar" tabindex="-1" id="mobileNavigation" aria-label="Navigation">
   <div class="offcanvas-header">
-    <a class="sidebar-brand" href="{% url 'dashboard' %}" id="mobileNavigationLabel">
-      <span class="brand-mark">A</span><span><strong>Allegderly</strong><small>Operations</small></span>
-    </a>
+    <div class="sidebar-crumbs">{% include "partials/_breadcrumbs.html" %}</div>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body pt-2">{% include "partials/_nav_links.html" %}</div>

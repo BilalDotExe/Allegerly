@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Stock Levels | Allegderly{% endblock %}
 {% block content %}
 {% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Stock Levels" subtitle="Current stock against reorder levels." %}
@@ -13,7 +13,7 @@
       {% for item in items %}
       <tr{% if item.report_is_low_stock %} class="row-warn"{% endif %}><td class="cell-link">{{ item.sku }}</td><td class="cell-strong">{{ item.name }}</td><td class="text-end cell-balance">{{ item.report_current_stock }}</td><td class="text-end cell-money">{{ item.reorder_level }}</td><td><span class="status-pill {% if item.report_is_low_stock %}status-pill-warn{% else %}status-pill-inactive{% endif %}">{{ item.report_is_low_stock|yesno:"Yes,No" }}</span></td></tr>
       {% empty %}
-      <tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No items found</strong><small>Add items to see stock levels.</small></span></div></td></tr>
+      <tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No items found</strong><small>Add items to see stock levels.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

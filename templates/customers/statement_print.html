@@ -65,6 +65,13 @@
     <section class="totals">
       <div class="due"><span>Balance due</span><span>{{ closing_balance|usd }}</span></div>
     </section>
+
+    {% if company.payment_instructions %}
+    <section class="inv-payment">
+      <span class="meta-label">Payment instructions</span>
+      <p>{{ company.payment_instructions|linebreaksbr }}</p>
+    </section>
+    {% endif %}
   </div>
 </body>
 </html>

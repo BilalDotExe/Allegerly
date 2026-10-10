@@ -26,6 +26,8 @@ body { background: var(--canvas); padding: 24px 16px; }
 .totals .due { color: var(--accent-strong); font-weight: 700; }
 .inv-foot { margin-top: 32px; padding-top: 14px; border-top: 1px solid var(--line-strong); color: var(--muted); font-size: 12px; text-align: center; }
 .inv-notes { margin: 0 0 16px; color: var(--ink-2); }
+.inv-payment { margin-top: 28px; padding: 14px 16px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--accent-soft); break-inside: avoid; }
+.inv-payment p { margin: 6px 0 0; color: var(--ink-2); }
 .no-print button:focus-visible, .no-print a:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
 
 @media print {

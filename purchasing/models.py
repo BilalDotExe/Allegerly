@@ -3,7 +3,9 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-from django.db import models, transaction
+from django.db import models
+
+from businesses.db import atomic
 from django.db.models import DecimalField, ExpressionWrapper, F, Sum, Value
 from django.db.models.functions import Coalesce
 
@@ -79,7 +81,7 @@ class PurchaseOrder(models.Model):
     def save(self, *args, **kwargs):
         creating = self.pk is None
         if creating and not self.po_number:
-            with transaction.atomic():
+            with atomic():
                 self.po_number = next_sequential_code(PurchaseOrder.objects, 'po_number', 'PO-')
                 self.full_clean()
                 super().save(*args, **kwargs)
@@ -225,7 +227,7 @@ class GoodsReceipt(models.Model):
     def save(self, *args, **kwargs):
         if self.pk:
             raise ValidationError('Goods receipts cannot be edited.')
-        with transaction.atomic():
+        with atomic():
             self.receipt_number = next_sequential_code(GoodsReceipt.objects, 'receipt_number', 'GR-')
             super().save(*args, **kwargs)
 

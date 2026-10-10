@@ -1,4 +1,4 @@
-@font-face { font-family: "Geist"; src: url("../vendor/fonts/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Plus Jakarta Sans"; src: url("../vendor/fonts/plus-jakarta-sans-latin-wght-normal.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; }
 
 :root {
   --ink: #12201b;
@@ -10,7 +10,7 @@
   --accent-deep: #08352c;
   --line: rgb(18 44 35 / 10%);
   --ease: cubic-bezier(.32, .72, 0, 1);
-  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 * { box-sizing: border-box; }

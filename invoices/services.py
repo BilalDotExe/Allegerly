@@ -1,11 +1,11 @@
-from django.db import transaction
+from businesses.db import atomic
 from django.core.exceptions import ValidationError
 from core.money import money
 from .models import Invoice, Payment
 from audit.services import log as audit_log
 
 
-@transaction.atomic
+@atomic
 def issue_invoice(invoice: Invoice, user, request=None):
     if invoice.status != 'draft':
         raise ValidationError("Only draft invoices can be issued.")
@@ -38,7 +38,7 @@ def issue_invoice(invoice: Invoice, user, request=None):
     return invoice
 
 
-@transaction.atomic
+@atomic
 def void_invoice(invoice: Invoice, user, reason: str, request=None):
     if invoice.status not in ('issued', 'paid'):
         raise ValidationError("Only issued or paid invoices can be voided.")
@@ -60,7 +60,7 @@ def void_invoice(invoice: Invoice, user, reason: str, request=None):
     return invoice
 
 
-@transaction.atomic
+@atomic
 def apply_credit(credit_note, invoice, amount, user, request=None):
     from .models import CreditApplication
     if invoice.status not in ('issued', 'paid'):
@@ -89,7 +89,7 @@ def apply_credit(credit_note, invoice, amount, user, request=None):
     credit_note.save()
     audit_log(user, 'credit_applied', credit_note, changes={'amount': str(amount), 'invoice': invoice.invoice_number}, request=request)
 
-@transaction.atomic
+@atomic
 def record_payment(invoice: Invoice, amount, method: str, payment_date, user, note: str = '', request=None):
     if invoice.status not in ('issued', 'paid'):
         raise ValidationError("Cannot record payment on a draft or voided invoice.")
@@ -141,7 +141,7 @@ def allocate_oldest_first(invoices, amount):
     return allocation, remaining
 
 
-@transaction.atomic
+@atomic
 def record_customer_payment(customer, allocation, method, payment_date, user, note='', request=None):
     """Record one payment per invoice for `allocation` ({invoice: amount}), all or nothing."""
     payments = []

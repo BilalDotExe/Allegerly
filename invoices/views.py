@@ -1,9 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import permission_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from core.models import CompanyProfile
 from core.pagination import PAGE_SIZE
+from core.permissions import ALL_GROUPS, group_required
 from django.core.exceptions import ValidationError
 from customers.models import Customer
 from .models import Invoice, CreditNote
@@ -20,7 +21,7 @@ def _pagination_query(request):
     return query.urlencode()
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def invoice_list(request):
     invoices = (
         Invoice.objects.select_related("customer")
@@ -56,7 +57,7 @@ def invoice_list(request):
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def invoice_create(request):
     form = InvoiceForm(request.POST or None)
     formset = InvoiceLineFormSet(request.POST or None)
@@ -79,7 +80,7 @@ def invoice_create(request):
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def invoice_detail(request, pk):
     invoice = get_object_or_404(Invoice.objects.select_related("customer", "created_by"), pk=pk)
     lines = invoice.lines.select_related("item")
@@ -90,10 +91,11 @@ def invoice_detail(request, pk):
         "lines": lines,
         "payments": payments,
         "credit_notes": credit_notes,
+        "has_discounts": lines.filter(discount_percent__gt=0).exists(),
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def invoice_print_view(request, pk):
     invoice = get_object_or_404(Invoice.objects.select_related("customer", "created_by"), pk=pk)
     if invoice.status not in ("issued", "paid"):
@@ -110,10 +112,11 @@ def invoice_print_view(request, pk):
         "lines": lines,
         "payments": payments,
         "company": CompanyProfile.load(),
+        "has_discounts": lines.filter(discount_percent__gt=0).exists(),
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def invoice_issue(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     if request.method == "POST":
@@ -125,7 +128,7 @@ def invoice_issue(request, pk):
     return redirect("invoices:detail", pk=pk)
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 @permission_required("invoices.change_invoice", raise_exception=True)
 def invoice_void(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -140,7 +143,25 @@ def invoice_void(request, pk):
     return render(request, "invoices/void_form.html", {"form": form, "invoice": invoice})
 
 
-@login_required
+@group_required(*ALL_GROUPS)
+@permission_required("invoices.delete_invoice", raise_exception=True)
+def invoice_delete(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk)
+    if invoice.status != 'draft':
+        messages.error(request, "Only draft invoices can be deleted. Void issued invoices instead.")
+        return redirect("invoices:detail", pk=pk)
+    if request.method == "POST":
+        number = invoice.invoice_number
+        # Logged before the delete, while the row still exists to describe.
+        audit_log(request.user, "invoice_deleted", invoice,
+                  changes={"invoice_number": number}, request=request)
+        invoice.delete()
+        messages.success(request, f"Draft invoice {number} deleted.")
+        return redirect("invoices:list")
+    return redirect("invoices:detail", pk=pk)
+
+
+@group_required(*ALL_GROUPS)
 def payment_create(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     form = PaymentForm(request.POST or None)
@@ -162,7 +183,7 @@ def payment_create(request, pk):
     return render(request, "invoices/payment_form.html", {"form": form, "invoice": invoice})
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def credit_list(request):
     credits = CreditNote.objects.select_related("customer", "invoice").order_by("-created_at")
     export_params = request.GET.copy()
@@ -191,7 +212,7 @@ def credit_list(request):
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def credit_detail(request, pk):
     credit = get_object_or_404(CreditNote.objects.select_related("customer", "invoice"), pk=pk)
     applications = credit.applications.select_related("invoice")
@@ -201,19 +222,20 @@ def credit_detail(request, pk):
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def credit_apply(request, pk):
     credit = get_object_or_404(CreditNote, pk=pk)
 
     # Build a simple form to pick an invoice and amount
     from django import forms as django_forms
     from core.forms import BootstrapForm
+    from .forms import InvoiceChoiceField
     class _ApplyForm(BootstrapForm):
-        invoice = django_forms.ModelChoiceField(
+        invoice = InvoiceChoiceField(
             queryset=Invoice.objects.filter(
                 customer=credit.customer,
                 status__in=["issued", "paid"]
-            )
+            ).select_related("customer")
         )
         amount = django_forms.DecimalField(max_digits=10, decimal_places=2)
 
@@ -234,7 +256,7 @@ def credit_apply(request, pk):
     return render(request, "invoices/credit_apply.html", {"form": form, "credit": credit})
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 @permission_required("invoices.change_creditnote", raise_exception=True)
 def credit_mark_refunded(request, pk):
     credit = get_object_or_404(CreditNote, pk=pk)

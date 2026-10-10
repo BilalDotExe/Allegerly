@@ -4,8 +4,8 @@
 <div class="page-heading list-page-heading">
   <div><div class="eyebrow">BILLING</div><h1>Invoices</h1><p class="page-subtitle">Review customer balances and keep billing on track.</p></div>
   <div class="page-actions">
-    <a class="btn btn-outline-primary export-button" href="?{{ export_query }}"><span aria-hidden="true">↓</span> Export CSV</a>
-    <a class="btn btn-primary app-primary-button" href="{% url 'invoices:create' %}"><span aria-hidden="true">＋</span> Add Invoice</a>
+    <a class="btn btn-outline-primary export-button" href="?{{ export_query }}"><span aria-hidden="true"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-download"/></svg></span> Export CSV</a>
+    <a class="btn btn-primary app-primary-button" href="{% url 'invoices:create' %}"><span aria-hidden="true"><svg><use href="#icon-plus"/></svg></span> Add Invoice</a>
   </div>
 </div>
 
@@ -43,18 +43,20 @@
             </table>
             <div class="expand-side">
               <dl>
+                <div><dt>Terms</dt><dd>{{ invoice.get_payment_terms_display }}</dd></div>
                 <div><dt>Subtotal</dt><dd>{{ invoice.subtotal|usd }}</dd></div>
                 <div><dt>Tax ({{ invoice.tax_percent|floatformat:"-2" }}%)</dt><dd>{{ invoice.tax_amount|usd }}</dd></div>
                 <div><dt>Paid</dt><dd>{{ invoice.total_paid|usd }}</dd></div>
                 <div class="is-total"><dt>Balance due</dt><dd>{{ invoice.balance_due|usd }}</dd></div>
               </dl>
-              <a class="btn btn-primary btn-sm app-primary-button" href="{% url 'invoices:detail' invoice.pk %}">Open full invoice <span aria-hidden="true">→</span></a>
+              <a class="btn btn-primary app-primary-button" href="{% url 'invoices:detail' invoice.pk %}"><span aria-hidden="true"><svg><use href="#icon-arrow-right"/></svg></span> Open full invoice</a>
+              {% if invoice.status == 'draft' and perms.invoices.delete_invoice %}<form method="post" action="{% url 'invoices:delete' invoice.pk %}" data-confirm="Permanently delete draft {{ invoice.invoice_number }}? This cannot be undone.">{% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Delete Draft</button></form>{% endif %}
             </div>
           </div>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No invoices found</strong><small>Try a different date range or create a new invoice.</small></span></div></td></tr>
+      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No invoices found</strong><small>Try a different date range or create a new invoice.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

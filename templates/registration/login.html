@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#0b4538" media="(max-width: 960px)">
   <meta name="theme-color" content="#f4f7f5">
   <title>Sign in | Allegderly</title>
-  <link rel="preload" href="{% static 'vendor/fonts/geist-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'vendor/fonts/plus-jakarta-sans-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
@@ -22,9 +22,8 @@
         <span class="wordmark">Allegderly</span>
       </div>
       <div class="brand-copy">
-        <span class="chip">Operations workspace</span>
         <h2>Every invoice, batch and return, in one calm place.</h2>
-        <p>Stock that always adds up. Invoices that stay honest. A clear record of what was sold, returned and written off.</p>
+        <p>Keep your books. Lose the headaches.</p>
       </div>
       <ul class="brand-points">
         <li>
@@ -50,7 +49,7 @@
           <span class="wordmark">Allegderly</span>
         </div>
 
-        <span class="eyebrow">Staff access</span>
+  
         <h1>Welcome back</h1>
         <p class="lede">Sign in to continue to your workspace.</p>
 
@@ -71,7 +70,7 @@
                 <label for="{{ form.username.id_for_label }}">Username</label>
                 <div class="input{% if form.username.errors %} has-error{% endif %}">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>
-                  <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="e.g. bilal…">
+                  <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="e.g. admin">
                 </div>
                 {% for error in form.username.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
               </div>
@@ -99,7 +98,7 @@
           </div>
         </div>
 
-        <p class="foot">Access is limited to authorised staff. After repeated failed attempts, sign-in is paused for an hour.</p>
+       
       </div>
     </section>
   </main>

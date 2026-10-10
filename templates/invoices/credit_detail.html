@@ -1,6 +1,7 @@
-{% extends "base.html" %}{% load money_filters %}
+﻿{% extends "base.html" %}{% load money_filters %}
 {% block title %}{{ credit.credit_number }} | Allegderly{% endblock %}
 {% block content %}
+<a href="{% url 'invoices:credit_list' %}" class="page-back page-back-top">← Back to Credit Notes</a>
 <div class="page-heading detail-heading">
   <div>
     <div class="eyebrow">BILLING</div>
@@ -38,7 +39,7 @@
     <thead><tr><th scope="col">Invoice</th><th scope="col" class="text-end">Amount</th><th scope="col">Date</th><th scope="col">By</th></tr></thead>
     <tbody>
       {% for app in applications %}<tr><td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' app.invoice.pk %}">{{ app.invoice.invoice_number }}</a></td><td class="text-end cell-money">{{ app.amount|usd }}</td><td class="cell-date">{{ app.created_at|date:"M j, Y" }}</td><td>{{ app.created_by }}</td></tr>
-      {% empty %}<tr><td colspan="4"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No applications yet</strong><small>Use Apply Credit to put this towards an invoice.</small></span></div></td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="4"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No applications yet</strong><small>Use Apply Credit to put this towards an invoice.</small></span></div></td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>

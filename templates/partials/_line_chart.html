@@ -1,0 +1,25 @@
+{% if chart.has_data %}
+<div class="col-chart line-chart{% if chart.dense %} is-dense{% endif %}">
+  <div class="cc-axis" aria-hidden="true">{% for t in chart.ticks %}<span style="bottom: {{ t.pct }}%">{{ t.label }}</span>{% endfor %}</div>
+  <div class="cc-plot">
+    <div class="cc-grid" aria-hidden="true">{% for t in chart.ticks %}<i{% if t.zero %} class="is-zero"{% endif %} style="bottom: {{ t.pct }}%"></i>{% endfor %}</div>
+    <svg class="lc-svg tone-{{ chart.tone }}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><polyline points="{{ chart.points }}"/></svg>
+    <div class="cc-cols">
+      {% for col in chart.cols %}
+      <div class="cc-col{% if col.current %} is-current{% endif %}{% if col.flip %} tip-left{% endif %}" tabindex="0" aria-label="{{ col.full }}, total {{ col.total }}">
+        <div class="cc-tip" role="tooltip">
+          <strong>{{ col.full }}</strong>
+          {% for bar in col.bars %}<span class="tip-row"><i class="dot tone-{{ bar.tone }}"></i>{{ bar.label }}<b>{{ bar.value }}</b></span>{% endfor %}
+        </div>
+        <div class="cc-bars">
+          {% for bar in col.bars %}<span class="lc-dot tone-{{ bar.tone }}" style="bottom: {{ bar.pct }}%"></span>{% endfor %}
+        </div>
+        <div class="cc-label">{{ col.label }}{% if col.sub %}<small>{{ col.sub }}</small>{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="empty-state chart-empty"><span class="empty-mark">–</span><span><strong>{{ empty_title|default:"Nothing to chart yet" }}</strong><small>{{ empty_text|default:"Data will appear here as it is recorded." }}</small></span></div>
+{% endif %}

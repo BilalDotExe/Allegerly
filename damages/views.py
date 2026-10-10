@@ -1,8 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from core.pagination import PAGE_SIZE
+from core.permissions import ALL_GROUPS, group_required
 from django.shortcuts import redirect, render
 
 from reports.forms import DateRangeForm
@@ -13,9 +13,11 @@ from .models import DamageReport
 from .services import log_damage
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def damage_list(request):
-    reports = DamageReport.objects.select_related("item", "invoice_line__invoice", "created_by").order_by("-date_reported", "-created_at")
+    reports = DamageReport.objects.select_related(
+        "item", "invoice_line__invoice", "created_by", "stock_movement", "credit_note"
+    ).order_by("-date_reported", "-created_at")
     form = DateRangeForm(request.GET or None)
     if form.is_valid():
         start_date = form.cleaned_data.get("start_date")
@@ -31,9 +33,12 @@ def damage_list(request):
     if request.GET.get("export") == "csv":
         return export_csv(
             "damages.csv",
-            ["Date", "Item SKU", "Item Name", "Quantity", "Loss Value", "Note", "Reported By"],
+            ["Date", "Item SKU", "Item Name", "Quantity", "Loss Value", "Credit Note", "Stock Adjusted", "Note", "Reported By"],
             [[report.date_reported, report.item.sku, report.item.name, report.quantity,
-              report.loss_value, report.note, report.created_by] for report in reports],
+              report.loss_value,
+              report.credit_note.credit_number if hasattr(report, "credit_note") else "",
+              "Yes" if report.stock_movement_id else "No",
+              report.note, report.created_by] for report in reports],
         )
 
     page_obj = Paginator(reports, PAGE_SIZE).get_page(request.GET.get("page"))
@@ -47,7 +52,7 @@ def damage_list(request):
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def damage_create(request):
     form = DamageReportForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -57,6 +62,8 @@ def damage_create(request):
                 item=data["item"], quantity=data["quantity"],
                 date_reported=data["date_reported"], created_by=request.user,
                 invoice_line=data["invoice_line"], note=data["note"], request=request,
+                issue_credit=data["issue_credit"], resolution=data["resolution"],
+                refund_method=data["refund_method"] or None,
             )
             messages.success(request, "Damage report recorded.")
             return redirect("damages:list")

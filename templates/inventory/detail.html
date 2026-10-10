@@ -1,9 +1,10 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load money_filters %}
 
 {% block title %}{{ item.name }} | Allegderly{% endblock %}
 
 {% block content %}
+<a href="{% url 'inventory:list' %}" class="page-back page-back-top">← Back to Items</a>
 <div class="page-heading detail-heading">
   <div>
     <div class="eyebrow">INVENTORY</div>
@@ -43,7 +44,7 @@
     <thead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col" class="text-end">Quantity</th><th scope="col">Note</th><th scope="col">By</th></tr></thead>
     <tbody>
       {% for movement in movements %}<tr><td class="cell-date">{{ movement.created_at|date:"M j, Y H:i" }}</td><td>{{ movement.get_movement_type_display }}</td><td class="text-end cell-money">{{ movement.quantity }}</td><td class="cell-note">{{ movement.note|default:"—" }}</td><td>{{ movement.created_by }}</td></tr>
-      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No movements yet</strong><small>Movements appear as this item is produced, sold or adjusted.</small></span></div></td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No movements yet</strong><small>Movements appear as this item is produced, sold or adjusted.</small></span></div></td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>

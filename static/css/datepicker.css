@@ -10,7 +10,7 @@
     0 8px 20px -6px rgb(18 44 35 / 18%),
     0 32px 48px -28px rgb(18 44 35 / 28%);
   overflow: hidden;
-  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   background: #fff;
   animation: fp-appear .22s cubic-bezier(.32, .72, 0, 1);
   padding: 0;
@@ -98,22 +98,25 @@
 /* Prev / next month arrows */
 .flatpickr-prev-month,
 .flatpickr-next-month {
-  position: static;
+  position: static !important;
+  top: auto !important;
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  align-self: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  color: #cee7de !important;
-  transition: background-color .25s, color .25s;
-  fill: #cee7de;
+  color: #fff !important;
+  fill: #fff !important;
   padding: 0;
   line-height: 1;
+  transition: background-color .25s, color .25s;
 }
 .flatpickr-prev-month:hover,
-.flatpickr-next-month:hover { background: rgb(255 255 255 / 16%); color: #fff !important; fill: #fff; }
+.flatpickr-next-month:hover { background: rgb(255 255 255 / 20%); }
 .flatpickr-prev-month svg,
-.flatpickr-next-month svg { width: 14px; height: 14px; }
+.flatpickr-next-month svg { width: 14px; height: 14px; fill: #fff; stroke: #fff; }
 
 /* ---------- Weekday row ---------- */
 .flatpickr-weekdays {

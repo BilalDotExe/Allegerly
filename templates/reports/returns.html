@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Returns Report | Allegderly{% endblock %}
 {% block content %}
 {% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Returns Report" subtitle="Returned quantities and individual returns." %}
@@ -12,7 +12,7 @@
       {% for item, quantity in by_item.items %}
       <tr><td class="cell-strong">{{ item }}</td><td class="text-end cell-money">{{ quantity }}</td></tr>
       {% empty %}
-      <tr><td colspan="2"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No item totals</strong><small>Try a different date range.</small></span></div></td></tr>
+      <tr><td colspan="2"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No item totals</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
@@ -25,7 +25,7 @@
       {% for customer, quantity in by_customer.items %}
       <tr><td class="cell-strong">{{ customer }}</td><td class="text-end cell-money">{{ quantity }}</td></tr>
       {% empty %}
-      <tr><td colspan="2"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No customer totals</strong><small>Try a different date range.</small></span></div></td></tr>
+      <tr><td colspan="2"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No customer totals</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>
@@ -39,7 +39,7 @@
       {% for record in records %}
       <tr><td class="cell-date">{{ record.date_returned|date:"M j, Y" }}</td><td class="cell-strong">{{ record.invoice_line.item.name }}</td><td>{{ record.invoice_line.invoice.customer.name }}</td><td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' record.invoice_line.invoice.pk %}">{{ record.invoice_line.invoice.invoice_number }}</a></td><td class="text-end cell-money">{{ record.quantity }}</td><td><span class="status-pill {% if record.is_restockable %}status-pill-active{% else %}status-pill-inactive{% endif %}">{{ record.is_restockable|yesno:"Yes,No" }}</span></td><td class="cell-note">{{ record.note|default:"—" }}</td></tr>
       {% empty %}
-      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No returns found</strong><small>Try a different date range.</small></span></div></td></tr>
+      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No returns found</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

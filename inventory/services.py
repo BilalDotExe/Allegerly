@@ -1,9 +1,9 @@
-from django.db import transaction
+from businesses.db import atomic
 from .models import StockMovement
 from audit.services import log as audit_log
 
 
-@transaction.atomic
+@atomic
 def create_stock_movement(item, movement_type, quantity, note, created_by, source=None):
     if movement_type in ('sale', 'damaged', 'expired') and quantity > 0:
         raise ValueError(f"{movement_type} movements must be negative.")
@@ -26,7 +26,7 @@ def create_stock_movement(item, movement_type, quantity, note, created_by, sourc
     movement.save()
     return movement
 
-@transaction.atomic
+@atomic
 def log_expiry(item, quantity, date_noticed, created_by, note='', request=None):
     if quantity <= 0:
         raise ValueError("Expiry quantity must be positive.")
@@ -54,7 +54,7 @@ def log_expiry(item, quantity, date_noticed, created_by, note='', request=None):
     return writeoff
 
 
-@transaction.atomic
+@atomic
 def adjust_stock(item, quantity, reason, created_by, request=None):
     if quantity == 0:
         raise ValueError("Adjustment quantity cannot be zero.")

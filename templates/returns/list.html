@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Returns | Allegderly{% endblock %}
 {% block content %}
 {% url 'returns:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="OPERATIONS" title="Returns" subtitle="Items returned against invoices." add_url=add_url add_label="Add Return" %}
@@ -12,7 +12,7 @@
       {% for record in page_obj %}
       <tr><td class="cell-date">{{ record.date_returned|date:"M j, Y" }}</td><td><a class="table-primary-link cell-link" href="{% url 'invoices:detail' record.invoice_line.invoice.pk %}">{{ record.invoice_line.invoice.invoice_number }}</a></td><td class="cell-strong">{{ record.invoice_line.invoice.customer.name }}</td><td>{{ record.invoice_line.item.name }}</td><td class="text-end cell-money">{{ record.quantity }}</td><td><span class="status-pill {% if record.is_restockable %}status-pill-active{% else %}status-pill-inactive{% endif %}">{{ record.is_restockable|yesno:"Yes,No" }}</span></td><td><a class="table-primary-link cell-link" href="{% url 'invoices:credit_detail' record.credit_note.pk %}">{{ record.credit_note.credit_number }}</a></td><td>{{ record.created_by }}</td></tr>
       {% empty %}
-      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No returns found</strong><small>Try a different date range or add a return.</small></span></div></td></tr>
+      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No returns found</strong><small>Try a different date range or add a return.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

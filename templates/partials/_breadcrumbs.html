@@ -1,0 +1,10 @@
+{% load nav_tags %}{% breadcrumb_trail as crumbs %}{% if crumbs %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol>
+    {% for crumb in crumbs %}<li{% if crumb.url is None %} aria-current="page"{% endif %}>
+      {% if crumb.url %}<a href="{{ crumb.url }}">{% if crumb.home %}<svg class="crumb-home-icon" aria-hidden="true"><use href="#icon-home"/></svg><span class="visually-hidden">{{ crumb.label }}</span>{% else %}{{ crumb.label }}{% endif %}</a>
+      {% else %}{% if crumb.home %}<svg class="crumb-home-icon" aria-hidden="true"><use href="#icon-home"/></svg>{% endif %}<span class="crumb-current">{{ crumb.label }}</span>{% endif %}
+    </li>{% endfor %}
+  </ol>
+</nav>
+{% endif %}

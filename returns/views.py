@@ -1,8 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from core.pagination import PAGE_SIZE
+from core.permissions import ALL_GROUPS, group_required
 from django.shortcuts import redirect, render
 
 from reports.forms import DateRangeForm
@@ -13,7 +13,7 @@ from .models import ReturnRecord
 from .services import log_return
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def return_list(request):
     records = ReturnRecord.objects.select_related(
         "invoice_line__invoice", "invoice_line__invoice__customer", "invoice_line__item", "created_by"
@@ -50,7 +50,7 @@ def return_list(request):
     })
 
 
-@login_required
+@group_required(*ALL_GROUPS)
 def return_create(request):
     form = ReturnRecordForm(request.POST or None)
     if request.method == "POST" and form.is_valid():

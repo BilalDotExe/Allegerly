@@ -46,15 +46,15 @@
 <p class="visually-hidden" id="chart-range-status" role="status" aria-live="polite"></p>
 <div class="chart-grid">
   <section class="dashboard-panel chart-wide">
-    <div class="panel-heading"><div><h2>Sales</h2><p>Invoiced per month, last {{ range_months }} months</p></div><div class="range-toggle" role="group" aria-label="Chart time range">{% for r in ranges %}<a href="?range={{ r }}" class="{% if r == range_months %}active{% endif %}">{{ r }}M</a>{% endfor %}</div></div>
-    <div class="chart-body">{% include "partials/_column_chart.html" with chart=sales_chart empty_title="No sales yet" empty_text="Issued invoices will be charted here." %}</div>
+    <div class="panel-heading"><div><h2>Sales</h2><p>Payments collected per month, last {{ range_months }} months</p></div><div class="range-toggle" role="group" aria-label="Chart time range">{% for r in ranges %}<a href="?range={{ r }}" class="{% if r == range_months %}active{% endif %}">{{ r }}M</a>{% endfor %}</div></div>
+    <div class="chart-body">{% include "partials/_line_chart.html" with chart=sales_chart empty_title="No sales yet" empty_text="Payments received will be charted here." %}</div>
   </section>
   <section class="dashboard-panel">
     <div class="panel-heading"><div><h2>Top customers</h2><p>Invoiced, last {{ range_months }} months</p></div><a class="panel-link" href="{% url 'customers:list' %}">Customers <span aria-hidden="true">→</span></a></div>
     <div class="chart-body">{% include "partials/_rank_bars.html" with rows=top_customers empty_title="No customer sales yet" %}</div>
   </section>
   <section class="dashboard-panel chart-wide">
-    <div class="panel-heading"><div><h2>Cash flow</h2><p>Payments received vs refunds paid out</p></div></div>
+    <div class="panel-heading"><div><h2>Cash flow</h2><p>Money in vs purchases and refunds paid out</p></div></div>
     <div class="chart-body">{% include "partials/_column_chart.html" with chart=cash_chart empty_title="No payments yet" empty_text="Recorded payments will be charted here." %}</div>
   </section>
   <section class="dashboard-panel">
@@ -62,8 +62,8 @@
     <div class="chart-body">{% include "partials/_rank_bars.html" with rows=top_items empty_title="No item sales yet" %}</div>
   </section>
   <section class="dashboard-panel chart-full">
-    <div class="panel-heading"><div><h2>Losses</h2><p>Damaged and expired at cost, plus customer returns</p></div><a class="panel-link" href="{% url 'damages:list' %}">Damage reports <span aria-hidden="true">→</span></a></div>
-    <div class="chart-body">{% include "partials/_column_chart.html" with chart=loss_chart empty_title="No losses recorded" empty_text="Damage, expiry and return values will appear here." %}</div>
+    <div class="panel-heading"><div><h2>Profit / loss</h2><p>Collected sales less purchases and losses, per month</p></div><a class="panel-link" href="{% url 'reports:index' %}">View reports <span aria-hidden="true">→</span></a></div>
+    <div class="chart-body">{% include "partials/_profit_chart.html" with chart=profit_chart empty_title="Nothing to chart yet" empty_text="Sales, purchases and losses will be charted here." %}</div>
   </section>
 </div>
 {% endblock %}

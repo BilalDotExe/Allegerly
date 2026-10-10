@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from businesses.db import atomic
 
 from audit.services import log as audit_log
 from core.money import money
@@ -14,7 +14,7 @@ def _ensure_not_below_paid(po):
         )
 
 
-@transaction.atomic
+@atomic
 def create_order(form, formset, user, request=None):
     po = form.save(commit=False)
     po.created_by = user
@@ -25,7 +25,7 @@ def create_order(form, formset, user, request=None):
     return po
 
 
-@transaction.atomic
+@atomic
 def update_order(form, formset, user, request=None):
     """Save header and line edits together; refuse edits that bring the total below what is paid."""
     po = form.save()
@@ -42,7 +42,7 @@ def update_order(form, formset, user, request=None):
     return po
 
 
-@transaction.atomic
+@atomic
 def place_order(po: PurchaseOrder, user, request=None):
     if po.status != "draft":
         raise ValidationError("Only draft purchase orders can be placed.")
@@ -54,7 +54,7 @@ def place_order(po: PurchaseOrder, user, request=None):
     return po
 
 
-@transaction.atomic
+@atomic
 def receive_goods(po: PurchaseOrder, received_date, lines, user, note="", request=None):
     """
     Record a delivery. `lines` is a list of dicts: po_line, quantity, unit_cost.
@@ -94,7 +94,7 @@ def receive_goods(po: PurchaseOrder, received_date, lines, user, note="", reques
     return receipt
 
 
-@transaction.atomic
+@atomic
 def close_order(po: PurchaseOrder, user, request=None):
     """Accept a short delivery: mark a partly received order as complete."""
     if po.status != "partial":
@@ -105,7 +105,7 @@ def close_order(po: PurchaseOrder, user, request=None):
     return po
 
 
-@transaction.atomic
+@atomic
 def cancel_order(po: PurchaseOrder, user, reason: str, request=None):
     if po.status not in ("draft", "ordered"):
         raise ValidationError("Only draft or ordered purchase orders can be cancelled.")
@@ -120,7 +120,7 @@ def cancel_order(po: PurchaseOrder, user, reason: str, request=None):
     return po
 
 
-@transaction.atomic
+@atomic
 def record_purchase_payment(po: PurchaseOrder, amount, method, payment_date, user,
                             reference="", note="", request=None):
     if po.status in ("draft", "cancelled"):

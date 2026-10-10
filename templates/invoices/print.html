@@ -47,13 +47,14 @@
         <span class="meta-label">Invoice no.</span><span>{{ invoice.invoice_number }}</span>
         <span class="meta-label">Issue date</span><span>{{ invoice.issue_date|date:"M j, Y"|default:"—" }}</span>
         <span class="meta-label">Due date</span><span>{{ invoice.due_date|date:"M j, Y"|default:"—" }}</span>
+        <span class="meta-label">Terms</span><span>{{ invoice.get_payment_terms_display }}</span>
         <span class="meta-label">Status</span><span>{{ invoice.get_status_display }}</span>
       </div>
     </section>
 
     <table class="inv-lines">
       <thead>
-        <tr><th>#</th><th>SKU</th><th>Item</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Line total</th></tr>
+        <tr><th>#</th><th>SKU</th><th>Item</th><th class="num">Qty</th><th class="num">Unit price</th>{% if has_discounts %}<th class="num">Disc.</th>{% endif %}<th class="num">Line total</th></tr>
       </thead>
       <tbody>
         {% for line in lines %}
@@ -63,6 +64,7 @@
           <td>{{ line.item.name }}</td>
           <td class="num">{{ line.quantity }}</td>
           <td class="num">{{ line.unit_price|usd }}</td>
+          {% if has_discounts %}<td class="num">{% if line.discount_percent %}{{ line.discount_percent|floatformat:"-2" }}%{% else %}—{% endif %}</td>{% endif %}
           <td class="num">{{ line.line_total|usd }}</td>
         </tr>
         {% empty %}
@@ -74,6 +76,7 @@
     {% if invoice.notes %}<p class="inv-notes"><strong>Notes:</strong> {{ invoice.notes }}</p>{% endif %}
 
     <section class="totals">
+      <div><span>Payment terms</span><span>{{ invoice.get_payment_terms_display }}</span></div>
       <div><span>Subtotal</span><span>{{ invoice.subtotal|usd }}</span></div>
       <div><span>Tax ({{ invoice.tax_percent }}%)</span><span>{{ invoice.tax_amount|usd }}</span></div>
       <div class="grand"><span>Total</span><span>{{ invoice.total|usd }}</span></div>
@@ -81,6 +84,13 @@
       {% if invoice.total_credits_applied %}<div><span>Credits applied</span><span>{{ invoice.total_credits_applied|usd }}</span></div>{% endif %}
       <div class="due"><span>Balance due</span><span>{{ invoice.balance_due|usd }}</span></div>
     </section>
+
+    {% if invoice.effective_payment_instructions %}
+    <section class="inv-payment">
+      <span class="meta-label">Payment instructions</span>
+      <p>{{ invoice.effective_payment_instructions|linebreaksbr }}</p>
+    </section>
+    {% endif %}
 
     {% if company.invoice_footer %}<footer class="inv-foot">{{ company.invoice_footer }}</footer>{% endif %}
   </div>
