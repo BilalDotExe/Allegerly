@@ -104,10 +104,8 @@ def build_employee_dashboard(today=None):
     outstanding_total = sum((inv.balance_due for inv in open_invoices), ZERO)
     draft_invoice_count = Invoice.objects.filter(status="draft").count()
 
-    open_orders = list(PurchaseOrder.objects.filter(status__in=("draft", "ordered", "partial")))
-    payable_total = sum(
-        (po.balance_due for po in open_orders if po.status != "draft"), ZERO
-    )
+    open_orders = list(PurchaseOrder.objects.filter(status__in=("ordered", "partial")))
+    payable_total = sum((po.balance_due for po in open_orders), ZERO)
 
     return {
         "open_invoice_count": len(open_invoices),

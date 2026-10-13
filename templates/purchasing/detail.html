@@ -6,23 +6,17 @@
   <div>
     <div class="eyebrow">PURCHASING</div>
     <h1>{{ po.po_number }}</h1>
-    <div class="status-group">
-      <span class="status-pill status-pill-{{ po.status }}">{{ po.get_status_display }}</span>
-      {% if po.status != 'draft' and po.status != 'cancelled' %}<span class="status-pill status-pill-pay-{{ po.payment_status }}">{{ po.payment_status_display }}</span>{% endif %}
-    </div>
+    <div class="status-group">{% include "partials/_po_payment_pill.html" %}</div>
   </div>
   <div class="page-actions">
-    {% if po.status == 'draft' %}
-      <form method="post" action="{% url 'purchasing:place' po.pk %}" data-confirm="Place {{ po.po_number }} with {{ po.vendor.name }}? The vendor is locked once the order is placed.">{% csrf_token %}<button class="btn btn-success app-primary-button" type="submit">Place Order</button></form>
-    {% endif %}
     {% if po.can_receive %}<a class="btn btn-success app-primary-button" href="{% url 'purchasing:receive' po.pk %}">Receive Goods</a>{% endif %}
     {% if po.status == 'partial' %}
       <form method="post" action="{% url 'purchasing:close' po.pk %}" data-confirm="Close this order as received? Outstanding quantities will no longer be expected.">{% csrf_token %}<button class="btn btn-outline-secondary" type="submit">Close Short</button></form>
     {% endif %}
-    {% if po.status != 'draft' and po.status != 'cancelled' and po.balance_due > 0 %}<a class="btn btn-primary app-primary-button" href="{% url 'purchasing:payment' po.pk %}">Record Payment</a>{% endif %}
+    {% if po.status != 'cancelled' and po.balance_due > 0 %}<a class="btn btn-primary app-primary-button" href="{% url 'purchasing:payment' po.pk %}">Record Payment</a>{% endif %}
     {% if po.is_editable %}<a class="btn btn-outline-secondary" href="{% url 'purchasing:edit' po.pk %}">Edit</a>{% endif %}
-    {% if po.status != 'draft' and po.status != 'cancelled' %}<a class="btn btn-outline-secondary" href="{% url 'purchasing:print' po.pk %}">View Full Order</a>{% endif %}
-    {% if po.status == 'draft' or po.status == 'ordered' %}<a class="btn btn-outline-danger" href="{% url 'purchasing:cancel' po.pk %}">Cancel Order</a>{% endif %}
+    {% if po.status != 'cancelled' %}<a class="btn btn-outline-secondary" href="{% url 'purchasing:print' po.pk %}">View Full Order</a>{% endif %}
+    {% if po.status == 'ordered' %}<a class="btn btn-outline-danger" href="{% url 'purchasing:cancel' po.pk %}">Cancel Order</a>{% endif %}
   </div>
 </div>
 
@@ -38,7 +32,6 @@
       {% if po.status == 'cancelled' %}<p><strong>Cancel reason:</strong> {{ po.cancel_reason }}</p>{% endif %}
     </div>
     <div class="col-md-6">
-      <p><strong>Payment terms:</strong> {{ po.vendor.get_payment_terms_display }}</p>
       <p><strong>Subtotal:</strong> {{ po.subtotal|usd }}</p>
       <p><strong>Tax ({{ po.tax_percent|floatformat:"-2" }}%):</strong> {{ po.tax_amount|usd }}</p>
       <p><strong>Shipping / other:</strong> {{ po.shipping_cost|usd }}</p>
@@ -52,10 +45,10 @@
 <section class="table-panel" aria-label="Items">
   <div class="table-heading"><div><h2>Items</h2><p>What was ordered and what has arrived</p></div></div>
   <div class="table-responsive"><table class="table data-table">
-    <thead><tr><th scope="col">Item name</th><th scope="col" class="text-end">Ordered</th><th scope="col" class="text-end">Received</th><th scope="col" class="text-end">Buying price</th><th scope="col" class="text-end">Line total</th></tr></thead>
+    <thead><tr><th scope="col" class="col-line">#</th><th scope="col">Item name</th><th scope="col" class="text-end">Ordered</th><th scope="col" class="text-end">Received</th><th scope="col" class="text-end">Buying price</th><th scope="col" class="text-end">Line total</th></tr></thead>
     <tbody>
-      {% for line in lines %}<tr><td class="cell-strong">{{ line.item_name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end">{{ line.received_qty }}</td><td class="text-end cell-money">{{ line.unit_cost|usd }}</td><td class="text-end cell-balance">{{ line.line_total|usd }}</td></tr>
-      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No line items</strong><small>Edit the order to add items.</small></span></div></td></tr>{% endfor %}
+      {% for line in lines %}<tr><td class="col-line">{{ forloop.counter }}</td><td class="cell-strong">{{ line.item_name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end">{{ line.received_qty }}</td><td class="text-end cell-money">{{ line.unit_cost|usd }}</td><td class="text-end cell-balance">{{ line.line_total|usd }}</td></tr>
+      {% empty %}<tr><td colspan="6"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No line items</strong><small>Edit the order to add items.</small></span></div></td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>

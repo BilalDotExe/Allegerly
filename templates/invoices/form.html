@@ -23,13 +23,14 @@
     <h2 class="card-section-title">Line items</h2>
     {{ formset.management_form }}
     {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
-    <div class="table-responsive line-items-wrap mb-3"><table class="table line-items" id="invoice-lines"><thead><tr><th>Item</th><th>Quantity</th><th>Unit price</th><th>Discount %</th><th>Delete</th></tr></thead><tbody>
+    <div class="table-responsive line-items-wrap mb-3"><table class="table line-items" id="invoice-lines" data-numbered><thead><tr><th class="line-no-head" scope="col">#</th><th>Item</th><th>Quantity</th><th>Unit price</th><th>Discount %</th><th class="line-del-head" scope="col"><span class="visually-hidden">Remove</span></th></tr></thead><tbody>
       {% for line_form in formset %}<tr class="line-row">{% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}
+        <td class="line-no">{{ forloop.counter }}</td>
         <td>{{ line_form.item }}{{ line_form.item.errors }}</td>
         <td>{{ line_form.quantity }}{{ line_form.quantity.errors }}{{ line_form.non_field_errors }}</td>
         <td>{{ line_form.unit_price }}{{ line_form.unit_price.errors }}</td>
         <td class="line-discount-cell"><div class="discount-stepper"><button type="button" class="disc-btn disc-minus" tabindex="-1" aria-label="Decrease discount">−</button>{{ line_form.discount_percent }}{{ line_form.discount_percent.errors }}<button type="button" class="disc-btn disc-plus" tabindex="-1" aria-label="Increase discount">+</button></div></td>
-        <td>{% if line_form.DELETE %}<div class="form-check">{{ line_form.DELETE }}</div>{% endif %}</td></tr>{% endfor %}
+        <td class="line-del-cell">{% if line_form.DELETE %}<div class="d-none">{{ line_form.DELETE }}</div><button type="button" class="line-del-btn" aria-label="Remove line" title="Remove line"><svg aria-hidden="true" width="15" height="15"><use href="#icon-trash"/></svg></button>{% endif %}</td></tr>{% endfor %}
     </tbody></table></div>
     <button type="button" class="btn btn-outline-primary" id="add-line">Add line</button>
   </div></div>

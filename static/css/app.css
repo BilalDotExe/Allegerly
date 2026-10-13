@@ -455,6 +455,7 @@ a.btn.btn-outline-secondary { place-content: center; }
 .icon-btn:hover { border-color: rgb(20 125 103 / 35%); background: var(--accent-soft); color: var(--accent-strong); }
 .icon-btn:active { transform: scale(.94); }
 .icon-btn svg { width: 17px; height: 17px; }
+.icon-btn-danger:hover { border-color: rgba(192,57,43,.35); background: rgba(192,57,43,.08); color: #c0392b; }
 
 .data-table .col-expand { width: 44px; padding-right: 0; }
 .row-expand { display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; transition: background-color .3s var(--ease), color .3s var(--ease); }
@@ -575,8 +576,19 @@ button, .btn, a, summary, label, .side-link, .row-expand, .icon-btn, input, sele
 .line-items thead th { padding: 12px; border-bottom: 1px solid var(--line); background: #f8faf9; color: var(--faint); font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .line-items tbody td { padding: 10px 12px; border-color: var(--line); vertical-align: middle; }
 .line-items tbody tr:last-child td { border-bottom: 0; }
-@media (min-width: 992px) { .line-items thead th:first-child { width: 38%; } }
+/* Line numbers: "#" column in editable tables, read-only tables and the printable view. */
+.line-items .line-no-head, .line-items .line-no { width: 1%; padding-right: 4px; text-align: center; font-variant-numeric: tabular-nums; }
+.line-items .line-no { color: var(--faint); font-size: 12px; font-weight: 600; }
+.line-items tr.is-removed > td:not(:last-child) { opacity: .45; }
+.line-items tr.is-removed .line-no { text-decoration: none; }
+.data-table .col-line, .expand-lines .col-line { width: 1%; padding-right: 4px; color: var(--faint); font-variant-numeric: tabular-nums; text-align: center; }
+@media (min-width: 992px) { .line-items thead th:first-child, .line-items[data-numbered] thead th:nth-child(2) { width: 38%; } .line-items[data-numbered] thead th:first-child { width: 1%; } }
 .line-discount-cell { white-space: nowrap; width: 1%; }
+.line-del-head { width: 1%; }
+.line-del-cell { width: 1%; text-align: center; white-space: nowrap; }
+.line-del-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; transition: color .15s, border-color .15s, background .15s; padding: 0; }
+.line-del-btn:hover, tr.is-removed .line-del-btn { color: #c0392b; border-color: rgba(192,57,43,.35); background: rgba(192,57,43,.06); }
+.line-del-btn:active { transform: scale(.92); }
 .discount-stepper { display: inline-flex; align-items: center; gap: 4px; }
 .discount-stepper input[type="number"] { width: 68px; text-align: center; padding: 5px 6px; -moz-appearance: textfield; }
 .discount-stepper input[type="number"]::-webkit-outer-spin-button,
@@ -610,3 +622,25 @@ button, .btn, a, summary, label, .side-link, .row-expand, .icon-btn, input, sele
 .vendor-table .cell-email, .vendor-table .cell-contact { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; white-space: normal; }
 .vendor-table td:first-child a.cell-link { white-space: normal; }
 @media (min-width: 768px) { .vendor-table thead th, .vendor-table tbody td { padding-right: 15px; padding-left: 15px; } }
+
+/* ---------- Expense categories: accordion, one open at a time ---------- */
+.exp-categories { display: grid; gap: 10px; margin-bottom: 14px; }
+.exp-cat { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); transition: border-color .3s var(--ease), box-shadow .3s var(--ease); }
+.exp-cat.is-open { border-color: rgb(20 125 103 / 35%); box-shadow: var(--bezel), var(--shadow-soft); }
+.exp-cat-head { display: flex; align-items: center; gap: 8px; padding-right: 12px; }
+.exp-cat-toggle { display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; padding: 14px 16px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 14px; font-weight: 650; text-align: left; cursor: pointer; }
+.exp-cat-toggle:focus-visible { outline: 2px solid rgb(20 125 103 / 55%); outline-offset: -2px; }
+.exp-chevron { width: 16px; height: 16px; flex: none; color: var(--muted); transition: transform .3s var(--ease), color .3s var(--ease); }
+.exp-cat.is-open .exp-chevron { transform: rotate(90deg); color: var(--accent-strong); }
+.exp-cat-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exp-cat-meta { margin-left: auto; color: var(--muted); font-size: 12.5px; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.exp-cat-body { padding: 14px 16px 16px; border-top: 1px solid var(--line); }
+.exp-cat-pick { margin-bottom: 14px; }
+.exp-field { display: block; margin: 0; }
+.exp-field > .form-label { display: block; }
+.exp-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+/* Category label heading a group of lines. Overrides the uppercase, letter-spaced
+   column-header look that .expand-lines th otherwise applies: these are typed
+   category names, so they keep the capitalisation the user entered. */
+.expand-lines .expand-group th { padding: 13px 8px 5px; border-bottom: 1px solid var(--line); color: var(--accent-strong); font-size: 11px; font-weight: 700; letter-spacing: .01em; text-transform: none; text-align: left; font-variant-numeric: tabular-nums; }
+.expand-lines .expand-group:first-child th { padding-top: 3px; }

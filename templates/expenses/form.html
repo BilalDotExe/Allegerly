@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Allegderly{% endblock %}
+{% block content %}
+<h1 class="form-page-title">{{ title }}</h1>
+<div class="row">
+  <div class="col-12">
+    <p class="form-page-lede">Choose a category, then add a line for each thing you spent on. Adding another category folds the open one away.</p>
+    <form method="post" class="app-form expense-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+      <div class="card mb-3"><div class="card-body">
+        <h2 class="card-section-title">Expense details</h2>
+        <div class="row g-3">
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.name %}</div>
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.report_date %}</div>
+          <div class="col-12">{% include "partials/_form_field.html" with field=form.notes %}</div>
+        </div>
+      </div></div>
+
+      <div class="card mb-3"><div class="card-body">
+        <h2 class="card-section-title">Categories</h2>
+        {{ formset.management_form }}
+        {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
+        <div class="exp-categories" id="exp-categories">{% for group in groups %}{% include "expenses/_category.html" %}{% endfor %}</div>
+        <div class="exp-footer">
+          <button type="button" class="btn btn-outline-primary" id="add-category">Add category</button>
+          <div class="po-summary text-end"><div>Total: <strong id="expense-total">$0.00</strong></div></div>
+        </div>
+      </div></div>
+
+      <div><button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-outline-secondary ms-2" href="{% if expense_report %}{% url 'expenses:detail' expense_report.pk %}{% else %}{% url 'expenses:list' %}{% endif %}">Cancel</a></div>
+
+      <template id="exp-category-template">{% include "expenses/_category.html" with group=blank_group %}</template>
+      <template id="exp-line-template">{% include "expenses/_line_row.html" with line_form=formset.empty_form %}</template>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+(function () {
+  var wrap = document.getElementById('exp-categories'),
+      addCategory = document.getElementById('add-category'),
+      total = document.getElementById('id_lines-TOTAL_FORMS'),
+      categoryTemplate = document.getElementById('exp-category-template'),
+      rowTemplate = document.getElementById('exp-line-template'),
+      grandTotal = document.getElementById('expense-total');
+  if (!wrap || !addCategory || !total || !categoryTemplate || !rowTemplate) return;
+
+  function money(n) { return '$' + (Math.round(n * 100) / 100).toFixed(2); }
+  function sections() { return wrap.querySelectorAll('.exp-cat:not(.is-removed)'); }
+  function initNumbers(section) {
+    if (window.lineNumbers) window.lineNumbers.init(section.querySelector('table.line-items'));
+  }
+
+  function categoryName(section) {
+    var select = section.querySelector('.exp-cat-select');
+    if (select.value === '__other__') return section.querySelector('.exp-cat-other').value.trim();
+    return select.value;
+  }
+
+  /* Push the section's category into every row's hidden field and refresh its summary. */
+  function refresh(section) {
+    var name = categoryName(section), count = 0, sum = 0;
+    section.querySelectorAll('tr.line-row').forEach(function (row) {
+      row.querySelector('[name$="-category"]').value = name;
+      var del = row.querySelector('[name$="-DELETE"]');
+      if (del && del.checked) return;
+      var amount = parseFloat(row.querySelector('[name$="-amount"]').value) || 0;
+      if (row.querySelector('[name$="-description"]').value.trim() || amount) { count += 1; sum += amount; }
+    });
+    section.querySelector('.exp-cat-title').textContent = name || 'New category';
+    section.querySelector('.exp-cat-meta').textContent = count + (count === 1 ? ' line' : ' lines') + ' · ' + money(sum);
+    section.querySelector('.exp-cat-other-wrap').hidden = section.querySelector('.exp-cat-select').value !== '__other__';
+    return sum;
+  }
+  function refreshAll() {
+    var sum = 0;
+    sections().forEach(function (section) { sum += refresh(section); });
+    grandTotal.textContent = money(sum);
+  }
+
+  /* Only one category is open at a time; passing nothing folds them all. */
+  function openOnly(target) {
+    wrap.querySelectorAll('.exp-cat').forEach(function (section) {
+      var open = section === target;
+      section.classList.toggle('is-open', open);
+      section.querySelector('.exp-cat-body').hidden = !open;
+      section.querySelector('.exp-cat-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
+
+  function addLine(section) {
+    var index = Number(total.value), body = section.querySelector('tbody');
+    body.insertAdjacentHTML('beforeend', rowTemplate.innerHTML.replace(/__prefix__/g, index));
+    total.value = index + 1;
+    refresh(section);
+    var field = body.lastElementChild.querySelector('[name$="-description"]');
+    if (field) field.focus();
+  }
+
+  function newCategory() {
+    var section = categoryTemplate.content.firstElementChild.cloneNode(true);
+    wrap.appendChild(section);
+    initNumbers(section);
+    addLine(section);
+    openOnly(section);
+    section.querySelector('.exp-cat-select').focus();
+  }
+
+  /* Saved rows can only be removed by ticking their delete box; rows that were never
+     saved are simply dropped. */
+  function removeCategory(section) {
+    var saved = section.querySelectorAll('[name$="-id"]');
+    var hasSaved = Array.prototype.some.call(saved, function (input) { return input.value; });
+    if (hasSaved) {
+      section.querySelectorAll('[name$="-DELETE"]').forEach(function (box) { box.checked = true; });
+      section.classList.add('is-removed');
+      section.hidden = true;
+    } else {
+      section.remove();
+    }
+    var next = sections()[0];
+    if (next) openOnly(next);
+    refreshAll();
+  }
+
+  wrap.addEventListener('click', function (e) {
+    var section = e.target.closest('.exp-cat');
+    if (!section) return;
+    if (e.target.closest('.exp-cat-toggle')) {
+      openOnly(section.classList.contains('is-open') ? null : section);
+    } else if (e.target.closest('.exp-add-line')) {
+      addLine(section);
+    } else if (e.target.closest('.exp-cat-remove')) {
+      removeCategory(section);
+    }
+  });
+  addCategory.addEventListener('click', newCategory);
+  var form = document.querySelector('.expense-form');
+  form.addEventListener('input', refreshAll);
+  form.addEventListener('change', refreshAll);
+  form.addEventListener('submit', refreshAll);
+
+  wrap.querySelectorAll('.exp-cat').forEach(initNumbers);
+  if (!wrap.querySelector('.exp-cat')) newCategory();
+  else openOnly(wrap.querySelector('.exp-cat.is-open') || wrap.querySelector('.exp-cat'));
+  refreshAll();
+})();
+</script>{% endblock %}

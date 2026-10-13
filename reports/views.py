@@ -5,11 +5,13 @@ from decimal import Decimal
 from django.db.models import DecimalField, ExpressionWrapper, F, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import render
+from django.utils import timezone
 
 from core.money import money
 from core.pagination import paginate
 from core.permissions import FULL_ACCESS_GROUPS, group_required
 from damages.models import DamageReport
+from expenses.models import ExpenseLine
 from inventory.models import ExpiryWriteOff, Item
 from invoices.models import Invoice
 from production.models import ProductionBatch
@@ -73,6 +75,7 @@ def report_index(request):
         ("Returns", "Returned quantities by item and customer.", "reports:returns"),
         ("Expiry", "Expired stock write-offs and loss value.", "reports:expiry"),
         ("Production", "Production batches and quantities produced.", "reports:production"),
+        ("Expenses", "Everything spent, from the first expense to today, by category.", "reports:expenses"),
     ]
     return render(request, "reports/index.html", {"reports": reports})
 
@@ -282,3 +285,58 @@ def production_report(request):
     return render(request, "reports/production.html", _report_context(
         request, form, page_of="records", records=records, total_produced=total_produced
     ))
+
+
+@group_required(*FULL_ACCESS_GROUPS)
+def expenses_report(request):
+    """Every expense line from the very first one up to today, unless narrowed by date."""
+    form, start_date, end_date = _date_range(request)
+    today = timezone.localdate()
+    # Expenses typed in with a future date are not spent yet, so the default
+    # window closes today.
+    end_date = end_date or today
+
+    lines = ExpenseLine.objects.select_related("report")
+    first_ever = lines.order_by("report__report_date").values_list("report__report_date", flat=True).first()
+    lines = _apply_date_range(lines, "report__report_date", start_date, end_date)
+    lines = lines.order_by("report__report_date", "report__report_number", "id")
+    line_list = list(lines)
+    _number_lines(line_list)
+
+    total = sum((line.amount for line in line_list), ZERO_MONEY)
+    by_category = defaultdict(lambda: {"count": 0, "total": ZERO_MONEY})
+    for line in line_list:
+        label = line.category or "Uncategorised"
+        bucket = by_category[label.lower()]
+        bucket.setdefault("label", label)
+        bucket["count"] += 1
+        bucket["total"] += line.amount
+    categories = sorted(by_category.values(), key=lambda row: (-row["total"], row["label"].lower()))
+    for row in categories:
+        row["share"] = (row["total"] / total * Decimal("100")).quantize(Decimal("0.1")) if total else Decimal("0.0")
+
+    period_start = start_date or first_ever
+    if request.GET.get("export") == "csv":
+        return export_csv(
+            "expenses.csv",
+            ["Date", "Report", "Report Name", "Line", "Description", "Category", "Reference", "Amount"],
+            [[line.report.report_date, line.report.report_number, line.report.name, line.line_no,
+              line.description, line.category, line.reference, line.amount]
+             for line in line_list],
+        )
+
+    return render(request, "reports/expenses.html", _report_context(
+        request, form, page_of="lines", lines=line_list, total=total, categories=categories,
+        report_count=len({line.report_id for line in line_list}),
+        period_start=period_start, period_end=end_date,
+    ))
+
+
+def _number_lines(lines):
+    """Stamp each line with its position inside its category of its own report
+    (1, 2, 3 ... restarting per category), as on the expense entry form."""
+    counts = {}
+    for line in lines:
+        key = (line.report_id, (line.category or "").lower())
+        counts[key] = counts.get(key, 0) + 1
+        line.line_no = counts[key]

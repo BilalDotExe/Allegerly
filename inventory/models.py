@@ -14,6 +14,7 @@ class Item(models.Model):
     sale_price = models.DecimalField(max_digits=10, decimal_places=2)
     reorder_level = models.PositiveIntegerField(default=10)
     has_expiry = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def current_stock(self):

@@ -23,22 +23,21 @@ _ZERO = Value(Decimal('0.00'), output_field=DecimalField(max_digits=14, decimal_
 # Receiving state only. Whether the vendor has been paid is tracked separately
 # (payment_status) because payment can happen before, during or after delivery.
 _ALLOWED_STATUS_TRANSITIONS = {
-    'draft': frozenset({'ordered', 'cancelled'}),
     'ordered': frozenset({'partial', 'received', 'cancelled'}),
     'partial': frozenset({'received'}),
     'received': frozenset(),
     'cancelled': frozenset(),
 }
 
-EDITABLE_STATUSES = ('draft', 'ordered', 'partial')
+EDITABLE_STATUSES = ('ordered', 'partial')
 
-# Vendor and number are fixed once the order leaves draft.
-_LOCKED_AFTER_DRAFT = ('vendor_id', 'po_number', 'created_by_id')
+# The number and creator never change. The vendor is fixed only once goods have
+# arrived or money has been paid (see PurchaseOrder.vendor_locked).
+_ALWAYS_LOCKED = ('po_number', 'created_by_id')
 
 
 class PurchaseOrder(models.Model):
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
         ('ordered', 'Ordered'),
         ('partial', 'Partially received'),
         ('received', 'Received'),
@@ -47,7 +46,7 @@ class PurchaseOrder(models.Model):
 
     vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name='purchase_orders')
     po_number = models.CharField(max_length=50, unique=True, blank=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ordered')
     order_date = models.DateField()
     expected_date = models.DateField('Expected delivery', null=True, blank=True)
     vendor_reference = models.CharField(
@@ -94,10 +93,11 @@ class PurchaseOrder(models.Model):
                               'tax_percent', 'shipping_cost', 'notes', 'created_by_id'):
                     if getattr(self, field) != getattr(original, field):
                         raise ValidationError(f'A {original.status} purchase order cannot be edited.')
-            if original.status != 'draft':
-                for field in _LOCKED_AFTER_DRAFT:
-                    if getattr(self, field) != getattr(original, field):
-                        raise ValidationError('The vendor cannot be changed once the order has been placed.')
+            for field in _ALWAYS_LOCKED:
+                if getattr(self, field) != getattr(original, field):
+                    raise ValidationError('The order number and creator cannot be changed.')
+            if self.vendor_id != original.vendor_id and original.vendor_locked:
+                raise ValidationError('The vendor cannot be changed once goods or payments have been recorded.')
             if self.status != original.status:
                 allowed = _ALLOWED_STATUS_TRANSITIONS.get(original.status, frozenset())
                 if self.status not in allowed:
@@ -110,6 +110,11 @@ class PurchaseOrder(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError('Purchase orders cannot be deleted. Cancel them instead.')
+
+    @property
+    def vendor_locked(self):
+        """True once goods have been received or a payment made against this order."""
+        return bool(self.pk) and (self.receipts.exists() or self.payments.exists())
 
     @property
     def is_editable(self):

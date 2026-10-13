@@ -43,18 +43,6 @@ def update_order(form, formset, user, request=None):
 
 
 @atomic
-def place_order(po: PurchaseOrder, user, request=None):
-    if po.status != "draft":
-        raise ValidationError("Only draft purchase orders can be placed.")
-    if not po.lines.exists():
-        raise ValidationError("Cannot place a purchase order with no lines.")
-    po.status = "ordered"
-    po.save(update_fields=["status"])
-    audit_log(user, "po_placed", po, request=request)
-    return po
-
-
-@atomic
 def receive_goods(po: PurchaseOrder, received_date, lines, user, note="", request=None):
     """
     Record a delivery. `lines` is a list of dicts: po_line, quantity, unit_cost.
@@ -107,8 +95,8 @@ def close_order(po: PurchaseOrder, user, request=None):
 
 @atomic
 def cancel_order(po: PurchaseOrder, user, reason: str, request=None):
-    if po.status not in ("draft", "ordered"):
-        raise ValidationError("Only draft or ordered purchase orders can be cancelled.")
+    if po.status != "ordered":
+        raise ValidationError("Only orders that have not been received yet can be cancelled.")
     if po.receipts.exists():
         raise ValidationError("Goods have already been received against this order.")
     if po.payments.exists():
@@ -123,8 +111,8 @@ def cancel_order(po: PurchaseOrder, user, reason: str, request=None):
 @atomic
 def record_purchase_payment(po: PurchaseOrder, amount, method, payment_date, user,
                             reference="", note="", request=None):
-    if po.status in ("draft", "cancelled"):
-        raise ValidationError("Cannot record a payment on a draft or cancelled purchase order.")
+    if po.status == "cancelled":
+        raise ValidationError("Cannot record a payment on a cancelled purchase order.")
     if amount <= 0:
         raise ValidationError("Payment amount must be positive.")
     if amount > po.balance_due:

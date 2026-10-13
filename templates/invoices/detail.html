@@ -46,10 +46,10 @@
 <section class="table-panel" aria-label="Line items">
   <div class="table-heading"><div><h2>Line items</h2><p>What was sold on this invoice</p></div></div>
   <div class="table-responsive"><table class="table data-table">
-    <thead><tr><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col" class="text-end">Unit price</th>{% if has_discounts %}<th scope="col" class="text-end">Discount</th>{% endif %}<th scope="col" class="text-end">Line total</th></tr></thead>
+    <thead><tr><th scope="col" class="col-line">#</th><th scope="col">Item</th><th scope="col" class="text-end">Quantity</th><th scope="col" class="text-end">Unit price</th>{% if has_discounts %}<th scope="col" class="text-end">Discount</th>{% endif %}<th scope="col" class="text-end">Line total</th></tr></thead>
     <tbody>
-      {% for line in lines %}<tr><td class="cell-strong">{{ line.item.name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end cell-money">{{ line.unit_price|usd }}</td>{% if has_discounts %}<td class="text-end">{% if line.discount_percent %}{{ line.discount_percent|floatformat:"-2" }}%{% else %}—{% endif %}</td>{% endif %}<td class="text-end cell-balance">{{ line.line_total|usd }}</td></tr>
-      {% empty %}<tr><td colspan="{% if has_discounts %}5{% else %}4{% endif %}"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No line items</strong><small>Edit the invoice to add items.</small></span></div></td></tr>{% endfor %}
+      {% for line in lines %}<tr><td class="col-line">{{ forloop.counter }}</td><td class="cell-strong">{{ line.item.name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end cell-money">{{ line.unit_price|usd }}</td>{% if has_discounts %}<td class="text-end">{% if line.discount_percent %}{{ line.discount_percent|floatformat:"-2" }}%{% else %}—{% endif %}</td>{% endif %}<td class="text-end cell-balance">{{ line.line_total|usd }}</td></tr>
+      {% empty %}<tr><td colspan="{% if has_discounts %}6{% else %}5{% endif %}"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No line items</strong><small>Edit the invoice to add items.</small></span></div></td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>

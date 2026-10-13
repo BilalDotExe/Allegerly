@@ -117,16 +117,19 @@
 
 
   /* invoice form: line items as stacked cards, action buttons side by side */
-  #invoice-lines, #invoice-lines tbody, #po-lines, #po-lines tbody { display: block; width: 100%; background: transparent !important; }
-  #invoice-lines thead, #po-lines thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  #invoice-lines tr.line-row, #po-lines tr.line-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-bottom: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
-  #invoice-lines tr.line-row > td, #po-lines tr.line-row > td { display: block; padding: 0; border: 0; background: transparent; }
-  #invoice-lines tr.line-row > td::before, #po-lines tr.line-row > td::before { content: attr(data-label); display: block; margin-bottom: 4px; color: var(--faint); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-  #invoice-lines tr.line-row > td:first-of-type, #po-lines tr.line-row > td:first-of-type { grid-column: 1 / -1; }
-  #invoice-lines tr.line-row > td:last-child, #po-lines tr.line-row > td:last-child { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; }
-  #invoice-lines tr.line-row > td:last-child::before, #po-lines tr.line-row > td:last-child::before { margin: 0; }
-  #invoice-lines .form-check, #po-lines .form-check { margin: 0; min-height: 0; padding: 0; }
-  #invoice-lines .form-check-input, #po-lines .form-check-input { width: 22px; height: 22px; margin: 0; float: none; }
+  #invoice-lines, #invoice-lines tbody, #po-lines, #po-lines tbody, table.exp-lines, table.exp-lines tbody { display: block; width: 100%; background: transparent !important; }
+  #invoice-lines thead, #po-lines thead, table.exp-lines thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  #invoice-lines tr.line-row, #po-lines tr.line-row, table.exp-lines tr.line-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-bottom: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  #invoice-lines tr.line-row > td, #po-lines tr.line-row > td, table.exp-lines tr.line-row > td { display: block; padding: 0; border: 0; background: transparent; }
+  #invoice-lines tr.line-row > td::before, #po-lines tr.line-row > td::before, table.exp-lines tr.line-row > td::before { content: attr(data-label); display: block; margin-bottom: 4px; color: var(--faint); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  #invoice-lines tr.line-row > td:first-of-type, #po-lines tr.line-row > td:first-of-type, table.exp-lines tr.line-row > td:first-of-type { grid-column: 1 / -1; }
+  #invoice-lines tr.line-row > td:last-child, #po-lines tr.line-row > td:last-child, table.exp-lines tr.line-row > td:last-child { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; }
+  #invoice-lines tr.line-row > td:last-child::before, #po-lines tr.line-row > td:last-child::before, table.exp-lines tr.line-row > td:last-child::before { margin: 0; }
+  #invoice-lines .form-check, #po-lines .form-check, table.exp-lines .form-check { margin: 0; min-height: 0; padding: 0; }
+  #invoice-lines .form-check-input, #po-lines .form-check-input, table.exp-lines .form-check-input { width: 22px; height: 22px; margin: 0; float: none; }
+  #invoice-lines tr.line-row > td.line-no, #po-lines tr.line-row > td.line-no, table.exp-lines tr.line-row > td.line-no { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 6px; width: auto; text-align: left; color: var(--accent-strong); font-size: 13px; font-weight: 650; }
+  #invoice-lines tr.line-row > td.line-no::before, #po-lines tr.line-row > td.line-no::before, table.exp-lines tr.line-row > td.line-no::before { content: "Line"; margin: 0; color: var(--faint); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; }
+  #invoice-lines tr.line-row > td.line-no + td, #po-lines tr.line-row > td.line-no + td, table.exp-lines tr.line-row > td.line-no + td { grid-column: 1 / -1; }
   #add-line { width: 100%; }
   main form > div:has(> .btn[type="submit"]) { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   main form > div:has(> .btn[type="submit"]) .btn { margin: 0 !important; }

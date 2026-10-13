@@ -12,7 +12,6 @@ from .models import PurchaseOrder, PurchaseOrderLine
 from .services import (
     cancel_order,
     close_order,
-    place_order,
     receive_goods,
     record_purchase_payment,
 )
@@ -23,7 +22,7 @@ class PurchasingBase(TestCase):
         self.user = User.objects.create_superuser("boss", "b@x.com", "pw")
         self.vendor = Vendor.objects.create(name="Acme Supply")
 
-    def make_po(self, place=True, tax="10", shipping="5"):
+    def make_po(self, tax="10", shipping="5"):
         po = PurchaseOrder.objects.create(
             vendor=self.vendor, order_date=date(2026, 1, 1), created_by=self.user,
             tax_percent=Decimal(tax), shipping_cost=Decimal(shipping),
@@ -32,8 +31,6 @@ class PurchasingBase(TestCase):
             purchase_order=po, item_name="Flour (50kg bag)", quantity=10, unit_cost=Decimal("2.00"))
         self.l_sugar = PurchaseOrderLine.objects.create(
             purchase_order=po, item_name="Sugar", quantity=5, unit_cost=Decimal("4.00"))
-        if place:
-            place_order(po, self.user)
         return po
 
     def entry(self, line, qty, cost=None):
@@ -42,7 +39,7 @@ class PurchasingBase(TestCase):
 
 class TotalsTests(PurchasingBase):
     def test_totals_and_numbering(self):
-        po = self.make_po(place=False)
+        po = self.make_po()
         self.assertEqual(po.po_number, "PO-000001")
         self.assertEqual(po.subtotal, Decimal("40.00"))   # 10*2 + 5*4
         self.assertEqual(po.tax_amount, Decimal("4.00"))
@@ -81,15 +78,16 @@ class ReceivingTests(PurchasingBase):
         self.assertEqual(self.l_flour.unit_cost, Decimal("2.50"))
         self.assertEqual(po.subtotal, Decimal("45.00"))
 
-    def test_cannot_over_receive_or_receive_nothing_or_receive_draft(self):
+    def test_cannot_over_receive_or_receive_nothing_or_receive_cancelled(self):
         po = self.make_po()
         with self.assertRaises(ValidationError):
             receive_goods(po, date(2026, 1, 5), [self.entry(self.l_flour, 11)], self.user)
         with self.assertRaises(ValidationError):
             receive_goods(po, date(2026, 1, 5), [self.entry(self.l_flour, 0)], self.user)
-        draft = self.make_po(place=False)
+        cancelled = self.make_po()
+        cancel_order(cancelled, self.user, "not needed")
         with self.assertRaises(ValidationError):
-            receive_goods(draft, date(2026, 1, 5), [self.entry(self.l_flour, 1)], self.user)
+            receive_goods(cancelled, date(2026, 1, 5), [self.entry(self.l_flour, 1)], self.user)
 
     def test_close_short(self):
         po = self.make_po()
@@ -123,10 +121,17 @@ class EditingTests(PurchasingBase):
         with self.assertRaises(ValidationError):
             PurchaseOrderLine.objects.create(purchase_order=po, item_name="Flour", quantity=1, unit_cost=1)
 
-    def test_vendor_locked_after_placing(self):
+    def test_new_orders_start_open_with_no_draft_step(self):
+        self.assertEqual(self.make_po().status, "ordered")
+
+    def test_vendor_can_change_until_goods_or_payment_exist(self):
         po = self.make_po()
         other = Vendor.objects.create(name="Other")
         po.vendor = other
+        po.save()   # nothing received or paid yet, so fixing a wrong vendor is fine
+        record_purchase_payment(po, Decimal("10.00"), "cash", date(2026, 1, 2), self.user)
+        po.refresh_from_db()
+        po.vendor = self.vendor
         with self.assertRaises(ValidationError):
             po.save()
 
@@ -146,9 +151,10 @@ class PaymentAndCancelTests(PurchasingBase):
             record_purchase_payment(po, Decimal("49.01"), "cash", date(2026, 1, 2), self.user)
         with self.assertRaises(ValidationError):
             record_purchase_payment(po, Decimal("0"), "cash", date(2026, 1, 2), self.user)
-        draft = self.make_po(place=False)
+        cancelled = self.make_po()
+        cancel_order(cancelled, self.user, "not needed")
         with self.assertRaises(ValidationError):
-            record_purchase_payment(draft, Decimal("1"), "cash", date(2026, 1, 2), self.user)
+            record_purchase_payment(cancelled, Decimal("1"), "cash", date(2026, 1, 2), self.user)
 
     def test_cannot_lower_total_below_paid_via_price_edit(self):
         po = self.make_po()
@@ -173,9 +179,9 @@ class PaymentAndCancelTests(PurchasingBase):
         with self.assertRaises(ValidationError):
             cancel_order(received, self.user, "x")
 
-    def test_vendor_outstanding_payable_counts_only_placed_orders(self):
-        po = self.make_po()                  # 49.00 placed
-        self.make_po(place=False)            # draft, ignored
+    def test_vendor_outstanding_payable_ignores_cancelled_orders(self):
+        po = self.make_po()                  # 49.00 open
+        cancel_order(self.make_po(), self.user, "not needed")   # cancelled, ignored
         record_purchase_payment(po, Decimal("9.00"), "cash", date(2026, 1, 2), self.user)
         self.assertEqual(self.vendor.outstanding_payable(), Decimal("40.00"))
 
@@ -198,13 +204,12 @@ class ViewTests(PurchasingBase):
         data.update(header)
         return data
 
-    def test_create_place_receive_pay_flow_and_audit(self):
+    def test_create_receive_pay_flow_and_audit(self):
         r = self.client.post(reverse("purchasing:create"), self._formset([("Flour (50kg bag)", 10, "1.50")]))
         po = PurchaseOrder.objects.get()
         self.assertRedirects(r, reverse("purchasing:detail", args=[po.pk]))
-        self.assertEqual(po.status, "draft")
+        self.assertEqual(po.status, "ordered")
 
-        self.client.post(reverse("purchasing:place", args=[po.pk]))
         line = po.lines.get()
         r = self.client.post(reverse("purchasing:receive", args=[po.pk]), {
             "received_date": "2026-02-03", "note": "slip 77",
@@ -220,7 +225,7 @@ class ViewTests(PurchasingBase):
         })
         self.assertEqual(po.payment_status, "paid")
         actions = set(AuditLog.objects.values_list("action", flat=True))
-        self.assertTrue({"po_created", "po_placed", "po_received", "po_payment_recorded"} <= actions)
+        self.assertTrue({"po_created", "po_received", "po_payment_recorded"} <= actions)
 
     def test_receive_form_rejects_over_receipt(self):
         po = self.make_po()
@@ -233,20 +238,20 @@ class ViewTests(PurchasingBase):
         self.assertEqual(po.receipts.count(), 0)
 
     def test_pages_render_and_print_gating(self):
-        po = self.make_po(place=False)
+        po = self.make_po()
         for name in ("list", "create"):
             self.assertEqual(self.client.get(reverse(f"purchasing:{name}")).status_code, 200)
         for name in ("detail", "edit"):
             self.assertEqual(self.client.get(reverse(f"purchasing:{name}", args=[po.pk])).status_code, 200)
-        r = self.client.get(reverse("purchasing:print", args=[po.pk]))
-        self.assertRedirects(r, reverse("purchasing:detail", args=[po.pk]))
-        place_order(po, self.user)
         for name in ("print", "receive", "payment", "cancel"):
             self.assertEqual(self.client.get(reverse(f"purchasing:{name}", args=[po.pk])).status_code, 200)
         self.assertContains(self.client.get(reverse("purchasing:print", args=[po.pk])), "Acme Supply")
         self.assertContains(self.client.get(reverse("vendors:detail", args=[self.vendor.pk])), po.po_number)
         csv = self.client.get(reverse("purchasing:list") + "?export=csv").content.decode()
         self.assertIn(po.po_number, csv)
+        cancel_order(po, self.user, "not needed")
+        r = self.client.get(reverse("purchasing:print", args=[po.pk]))
+        self.assertRedirects(r, reverse("purchasing:detail", args=[po.pk]))
 
     def test_edit_changes_prices_and_blocks_underpaying(self):
         po = self.make_po()
@@ -272,3 +277,57 @@ class ViewTests(PurchasingBase):
         html = self.client.get(reverse("purchasing:create")).content.decode()
         self.assertNotIn("Linked inventory item", html)
         self.assertNotIn("Not tracked in inventory", html)
+
+
+class SimplifiedOrderTests(PurchasingBase):
+    """Only the vendor and each line's item name are required; no terms or status are shown."""
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.user)
+
+    def _post(self, **extra):
+        data = {
+            "vendor": self.vendor.pk, "order_date": "", "expected_date": "", "vendor_reference": "",
+            "tax_percent": "", "shipping_cost": "", "notes": "",
+            "lines-TOTAL_FORMS": 1, "lines-INITIAL_FORMS": 0,
+            "lines-MIN_NUM_FORMS": 0, "lines-MAX_NUM_FORMS": 1000,
+            "lines-0-item_name": "Oven repair", "lines-0-quantity": "", "lines-0-unit_cost": "",
+        }
+        data.update(extra)
+        return self.client.post(reverse("purchasing:create"), data)
+
+    def test_blank_dates_numbers_and_line_fields_fall_back_to_defaults(self):
+        r = self._post()
+        po = PurchaseOrder.objects.get()
+        self.assertRedirects(r, reverse("purchasing:detail", args=[po.pk]))
+        self.assertEqual(po.tax_percent, Decimal("0.00"))
+        self.assertEqual(po.shipping_cost, Decimal("0.00"))
+        self.assertIsNotNone(po.order_date)
+        line = po.lines.get()
+        self.assertEqual((line.quantity, line.unit_cost), (1, Decimal("0.00")))
+
+    def test_order_can_be_saved_with_no_lines(self):
+        self._post(**{"lines-0-item_name": ""})
+        self.assertEqual(PurchaseOrder.objects.count(), 1)
+        self.assertEqual(PurchaseOrder.objects.get().lines.count(), 0)
+
+    def test_vendor_and_item_name_stay_required(self):
+        self._post(vendor="")
+        self.assertEqual(PurchaseOrder.objects.count(), 0)
+        self._post(**{"lines-0-item_name": "", "lines-0-quantity": "3"})
+        self.assertEqual(PurchaseOrder.objects.count(), 0)
+
+    def test_pages_show_line_numbers_but_no_terms_or_status(self):
+        po = self.make_po()
+        for url in (reverse("purchasing:detail", args=[po.pk]), reverse("purchasing:print", args=[po.pk])):
+            html = self.client.get(url).content.decode()
+            self.assertNotIn("Terms", html)
+        print_html = self.client.get(reverse("purchasing:print", args=[po.pk])).content.decode()
+        self.assertNotIn(">Status<", print_html)
+        self.assertIn('<td class="ln">2</td>', print_html)
+        list_html = self.client.get(reverse("purchasing:list")).content.decode()
+        self.assertNotIn("id_status", list_html)
+        self.assertIn('<td class="col-line">2</td>', list_html)
+        edit_html = self.client.get(reverse("purchasing:edit", args=[po.pk])).content.decode()
+        self.assertIn('class="line-no">1</td>', edit_html)

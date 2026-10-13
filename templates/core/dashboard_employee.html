@@ -35,9 +35,9 @@
 
 <div class="section-title">Quick links</div>
 <div class="quick-link-grid">
-  <a class="quick-link-card" href="{% url 'invoices:create' %}"><span class="quick-link-glyph" aria-hidden="true">▧</span><span><strong>New Invoice</strong><small>Bill a customer</small></span></a>
-  <a class="quick-link-card" href="{% url 'purchasing:create' %}"><span class="quick-link-glyph" aria-hidden="true">⊞</span><span><strong>New Purchase Order</strong><small>Order from a vendor</small></span></a>
-  <a class="quick-link-card" href="{% url 'returns:create' %}"><span class="quick-link-glyph" aria-hidden="true">↩</span><span><strong>New Return</strong><small>Record a customer return</small></span></a>
-  <a class="quick-link-card" href="{% url 'damages:create' %}"><span class="quick-link-glyph" aria-hidden="true">◇</span><span><strong>New Damage Report</strong><small>Log damaged stock</small></span></a>
+  <a class="quick-link-card" href="{% url 'invoices:create' %}"><span class="quick-link-glyph" aria-hidden="true"><svg><use href="#icon-document-text"/></svg></span><span><strong>New Invoice</strong><small>Bill a customer</small></span></a>
+  <a class="quick-link-card" href="{% url 'purchasing:create' %}"><span class="quick-link-glyph" aria-hidden="true"><svg><use href="#icon-clipboard-list"/></svg></span><span><strong>New Purchase Order</strong><small>Order from a vendor</small></span></a>
+  <a class="quick-link-card" href="{% url 'returns:create' %}"><span class="quick-link-glyph" aria-hidden="true"><svg><use href="#icon-arrow-uturn-left"/></svg></span><span><strong>New Return</strong><small>Record a customer return</small></span></a>
+  <a class="quick-link-card" href="{% url 'damages:create' %}"><span class="quick-link-glyph" aria-hidden="true"><svg><use href="#icon-exclamation-triangle"/></svg></span><span><strong>New Damage Report</strong><small>Log damaged stock</small></span></a>
 </div>
 {% endblock %}

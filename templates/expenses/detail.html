@@ -1,0 +1,48 @@
+{% extends "base.html" %}{% load money_filters %}
+{% block title %}{{ expense_report.report_number }} | Allegderly{% endblock %}
+{% block content %}
+<a href="{% url 'expenses:list' %}" class="page-back page-back-top">← Back to Expenses</a>
+<div class="page-heading detail-heading">
+  <div>
+    <div class="eyebrow">PURCHASING</div>
+    <h1>{{ expense_report.report_number }}</h1>
+    <p class="page-subtitle">{{ expense_report.name }}</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline-secondary" href="{% url 'expenses:edit' expense_report.pk %}">Edit</a>
+  </div>
+</div>
+
+<div class="card mb-4"><div class="card-body">
+  <div class="row">
+    <div class="col-md-6">
+      <p><strong>Date:</strong> {{ expense_report.report_date|date:"M j, Y" }}</p>
+      <p><strong>Notes:</strong> {{ expense_report.notes|default:"—" }}</p>
+    </div>
+    <div class="col-md-6">
+      <p><strong>Lines:</strong> {{ line_count }}</p>
+      <p><strong>Total:</strong> {{ expense_report.total|usd }}</p>
+      <p><strong>Entered by:</strong> {{ expense_report.created_by.get_username }}</p>
+    </div>
+  </div>
+</div></div>
+
+{% for group in groups %}
+<section class="table-panel" aria-label="{{ group.category|default:'No category' }}">
+  <div class="table-heading"><div><h2>{{ group.category|default:"No category" }}</h2><p>{{ group.lines|length }} line{{ group.lines|length|pluralize }} · subtotal {{ group.total|usd }}</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col" class="col-line">#</th><th scope="col">Description</th><th scope="col" class="text-end">Amount</th><th scope="col">Reference</th></tr></thead>
+    <tbody>
+      {% for line in group.lines %}<tr><td class="col-line">{{ line.line_no }}</td><td class="cell-strong">{{ line.description }}</td><td class="text-end cell-balance">{{ line.amount|usd }}</td><td>{{ line.reference|default:"—" }}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% empty %}
+<section class="table-panel" aria-label="Expense lines">
+  <div class="table-responsive"><table class="table data-table"><tbody>
+    <tr><td><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No lines</strong><small>Edit this expense to add some.</small></span></div></td></tr>
+  </tbody></table></div>
+</section>
+{% endfor %}
+<a href="{% url 'expenses:list' %}" class="page-back">← Back to Expenses</a>
+{% endblock %}

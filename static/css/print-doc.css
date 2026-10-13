@@ -17,6 +17,7 @@ body { background: var(--canvas); padding: 24px 16px; }
 .inv-lines th { padding: 8px 10px; background: var(--accent-soft); color: var(--accent-deep); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; text-align: left; }
 .inv-lines td { padding: 9px 10px; border-bottom: 1px solid var(--line-strong); }
 .inv-lines .num, .inv-lines th.num { text-align: right; }
+.inv-lines .ln, .inv-lines th.ln { width: 1%; padding-right: 4px; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
 /* Figures line up column-wise only with fixed-width digits. */
 .inv-lines .num, .totals, .inv-title .num { font-variant-numeric: tabular-nums; }
 .sku { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }

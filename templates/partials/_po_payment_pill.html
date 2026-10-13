@@ -1,0 +1,1 @@
+{% if po.status == 'cancelled' %}<span class="status-pill status-pill-cancelled">Cancelled</span>{% else %}<span class="status-pill status-pill-pay-{{ po.payment_status }}">{{ po.payment_status_display }}</span>{% endif %}

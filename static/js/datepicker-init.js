@@ -58,6 +58,40 @@
 
   var COARSE = !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
 
+  /* Open the calendar beside the field — on whichever side has more room — so it
+     never covers the fields below it. When neither side can fit the calendar
+     (narrow screens), fall back to flatpickr's usual placement under the input. */
+  function sidePosition(fp) {
+    var cal = fp.calendarContainer;
+    var input = fp._positionElement || fp.altInput || fp.input;
+    var rect = input.getBoundingClientRect();
+    var calW = cal.offsetWidth, calH = cal.offsetHeight;
+    var gap = 8, edge = 4;
+    var vpW = document.documentElement.clientWidth;
+    var vpH = document.documentElement.clientHeight;
+    var roomRight = vpW - rect.right, roomLeft = rect.left;
+
+    if (roomRight < calW + gap && roomLeft < calW + gap) {
+      cal.classList.remove("fp-side");
+      var belowTop = rect.bottom + 2;
+      var belowLeft = Math.min(rect.left, vpW - calW - edge);
+      cal.style.top = (window.pageYOffset + belowTop) + "px";
+      cal.style.left = (window.pageXOffset + Math.max(edge, belowLeft)) + "px";
+      cal.style.right = "auto";
+      return;
+    }
+
+    cal.classList.add("fp-side");
+    var left = roomRight >= calW + gap || roomRight >= roomLeft
+      ? rect.right + gap
+      : rect.left - calW - gap;
+    left = Math.max(edge, Math.min(left, vpW - calW - edge));
+    var top = Math.max(edge, Math.min(rect.top, vpH - calH - edge));
+    cal.style.top = (window.pageYOffset + top) + "px";
+    cal.style.left = (window.pageXOffset + left) + "px";
+    cal.style.right = "auto";
+  }
+
   var BASE_CONFIG = {
     dateFormat: "Y-m-d",      /* what gets POSTed / what the input value holds */
     altInput: true,           /* visible, human-readable input */
@@ -79,7 +113,11 @@
   function init() {
     document.querySelectorAll('input[type="date"]').forEach(function (el) {
       if (el._flatpickr) return;
-      flatpickr(el, Object.assign({}, BASE_CONFIG));
+      var config = Object.assign({}, BASE_CONFIG);
+      /* A field tagged data-calendar-below keeps the calendar under it; the rest
+         open to the side (see sidePosition). */
+      if (!el.hasAttribute("data-calendar-below")) config.position = sidePosition;
+      flatpickr(el, config);
     });
   }
 

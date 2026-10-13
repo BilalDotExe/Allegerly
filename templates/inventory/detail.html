@@ -11,6 +11,7 @@
     <h1>{{ item.name }}</h1>
     <div class="status-group">
       <span class="status-pill status-pill-draft">{{ item.sku }}</span>
+      {% if not item.is_active %}<span class="status-pill status-pill-inactive">Not selling</span>{% endif %}
       {% if item.is_low_stock %}<span class="status-pill status-pill-warn">Low stock</span>{% endif %}
       {% if item.has_expiry %}<span class="status-pill status-pill-return">Tracks expiry</span>{% endif %}
     </div>

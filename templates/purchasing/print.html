@@ -45,20 +45,18 @@
         <span class="meta-label">PO no.</span><span>{{ po.po_number }}</span>
         <span class="meta-label">Order date</span><span>{{ po.order_date|date:"M j, Y" }}</span>
         <span class="meta-label">Expected</span><span>{{ po.expected_date|date:"M j, Y"|default:"—" }}</span>
-        <span class="meta-label">Terms</span><span>{{ po.vendor.get_payment_terms_display }}</span>
         {% if po.vendor_reference %}<span class="meta-label">Vendor ref.</span><span>{{ po.vendor_reference }}</span>{% endif %}
-        <span class="meta-label">Status</span><span>{{ po.get_status_display }}</span>
       </div>
     </section>
 
     <table class="inv-lines">
       <thead>
-        <tr><th>#</th><th>Item name</th><th class="num">Ordered</th><th class="num">Received</th><th class="num">Buying price</th><th class="num">Line total</th></tr>
+        <tr><th class="ln">#</th><th>Item name</th><th class="num">Ordered</th><th class="num">Received</th><th class="num">Buying price</th><th class="num">Line total</th></tr>
       </thead>
       <tbody>
         {% for line in lines %}
         <tr>
-          <td>{{ forloop.counter }}</td>
+          <td class="ln">{{ forloop.counter }}</td>
           <td>{{ line.item_name }}</td>
           <td class="num">{{ line.quantity }}</td>
           <td class="num">{{ line.received_qty }}</td>
@@ -74,7 +72,6 @@
     {% if po.notes %}<p class="inv-notes"><strong>Notes:</strong> {{ po.notes }}</p>{% endif %}
 
     <section class="totals">
-      <div><span>Payment terms</span><span>{{ po.vendor.get_payment_terms_display }}</span></div>
       <div><span>Subtotal</span><span>{{ po.subtotal|usd }}</span></div>
       <div><span>Tax ({{ po.tax_percent }}%)</span><span>{{ po.tax_amount|usd }}</span></div>
       <div><span>Shipping / other</span><span>{{ po.shipping_cost|usd }}</span></div>

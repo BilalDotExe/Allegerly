@@ -124,3 +124,53 @@ class LineDiscountTests(TestCase):
         self.assertEqual(line.line_total, Decimal("10.00"))
         self.assertEqual(line.credit_amount_for(1), Decimal("5.00"))
         self.assertEqual(line.credit_amount_for(2), Decimal("10.00"))
+
+
+class MinimalInvoiceEntryTests(TestCase):
+    """Only the customer and each line's item are required; everything else has a default."""
+
+    def setUp(self):
+        self.user = User.objects.create_superuser("boss", "b@x.com", "pw")
+        self.client.force_login(self.user)
+        self.cust = Customer.objects.create(first_name="Ada")
+        self.item = Item.objects.create(sku="S1", name="Widget", cost_price=1, sale_price=5)
+
+    def _post(self, **extra):
+        data = {
+            "customer": self.cust.pk, "payment_terms": "", "tax_percent": "",
+            "issue_date": "", "due_date": "", "notes": "", "payment_instructions": "",
+            "lines-TOTAL_FORMS": "1", "lines-INITIAL_FORMS": "0", "lines-MIN_NUM_FORMS": "0",
+            "lines-MAX_NUM_FORMS": "1000", "lines-0-item": self.item.pk,
+            "lines-0-quantity": "", "lines-0-unit_price": "", "lines-0-discount_percent": "",
+        }
+        data.update(extra)
+        return self.client.post(reverse("invoices:create"), data)
+
+    def test_blank_terms_tax_quantity_and_price_use_defaults(self):
+        self._post()
+        invoice = Invoice.objects.get()
+        self.assertEqual(invoice.payment_terms, Invoice.TERMS_NET_30)
+        self.assertEqual(invoice.tax_percent, Decimal("0.00"))
+        line = invoice.lines.get()
+        self.assertEqual(line.quantity, 1)
+        self.assertEqual(line.unit_price, self.item.sale_price)
+        self.assertEqual(line.discount_percent, Decimal("0"))
+
+    def test_invoice_can_be_saved_with_no_lines(self):
+        self._post(**{"lines-0-item": "", "lines-0-discount_percent": "0"})
+        self.assertEqual(Invoice.objects.get().lines.count(), 0)
+
+    def test_customer_and_line_item_stay_required(self):
+        self._post(customer="")
+        self.assertEqual(Invoice.objects.count(), 0)
+        self._post(**{"lines-0-item": "", "lines-0-quantity": "4"})
+        self.assertEqual(Invoice.objects.count(), 0)
+
+    def test_line_numbers_on_form_detail_list_and_print(self):
+        invoice = Invoice.objects.create(customer=self.cust, created_by=self.user, status="issued")
+        for qty in (1, 2):
+            InvoiceLine.objects.create(invoice=invoice, item=self.item, quantity=qty, unit_price=5)
+        self.assertContains(self.client.get(reverse("invoices:create")), 'class="line-no">1</td>')
+        self.assertContains(self.client.get(reverse("invoices:detail", args=[invoice.pk])), '<td class="col-line">2</td>')
+        self.assertContains(self.client.get(reverse("invoices:list")), '<td class="col-line">2</td>')
+        self.assertContains(self.client.get(reverse("invoices:print", args=[invoice.pk])), '<td class="ln">2</td>')

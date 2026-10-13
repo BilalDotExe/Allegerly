@@ -38,8 +38,8 @@
         <td colspan="8">
           <div class="expand-card">
             <table class="expand-lines">
-              <thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Unit price</th><th class="text-end">Line total</th></tr></thead>
-              <tbody>{% for line in invoice.lines.all %}<tr><td>{{ line.item.name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end">{{ line.unit_price|usd }}</td><td class="text-end">{{ line.line_total|usd }}</td></tr>{% empty %}<tr><td colspan="4" class="text-secondary">No line items.</td></tr>{% endfor %}</tbody>
+              <thead><tr><th class="col-line">#</th><th>Item</th><th class="text-end">Qty</th><th class="text-end">Unit price</th><th class="text-end">Line total</th></tr></thead>
+              <tbody>{% for line in invoice.lines.all %}<tr><td class="col-line">{{ forloop.counter }}</td><td>{{ line.item.name }}</td><td class="text-end">{{ line.quantity }}</td><td class="text-end">{{ line.unit_price|usd }}</td><td class="text-end">{{ line.line_total|usd }}</td></tr>{% empty %}<tr><td colspan="5" class="text-secondary">No line items.</td></tr>{% endfor %}</tbody>
             </table>
             <div class="expand-side">
               <dl>

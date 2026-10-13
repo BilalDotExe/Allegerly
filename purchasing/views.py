@@ -21,7 +21,6 @@ from .services import (
     cancel_order,
     close_order,
     create_order,
-    place_order,
     receive_goods,
     record_purchase_payment,
     update_order,
@@ -41,8 +40,6 @@ def po_list(request):
             orders = orders.filter(order_date__gte=form.cleaned_data["start_date"])
         if form.cleaned_data.get("end_date"):
             orders = orders.filter(order_date__lte=form.cleaned_data["end_date"])
-        if form.cleaned_data.get("status"):
-            orders = orders.filter(status=form.cleaned_data["status"])
 
     export_params = request.GET.copy()
     export_params["export"] = "csv"
@@ -50,8 +47,8 @@ def po_list(request):
     if request.GET.get("export") == "csv":
         return export_csv(
             "purchase_orders.csv",
-            ["PO Number", "Vendor", "Status", "Payment", "Order Date", "Expected", "Total", "Balance Due"],
-            [[o.po_number, o.vendor.name, o.get_status_display(), o.payment_status_display,
+            ["PO Number", "Vendor", "Payment", "Order Date", "Expected", "Total", "Balance Due"],
+            [[o.po_number, o.vendor.name, o.payment_status_display,
               o.order_date, o.expected_date or "", o.total, o.balance_due] for o in orders],
         )
 
@@ -97,7 +94,7 @@ def po_detail(request, pk):
 def po_edit(request, pk):
     po = get_object_or_404(PurchaseOrder, pk=pk)
     if not po.is_editable:
-        messages.error(request, f"A {po.get_status_display().lower()} purchase order can no longer be edited.")
+        messages.error(request, "This purchase order can no longer be edited.")
         return redirect("purchasing:detail", pk=pk)
     form = PurchaseOrderForm(request.POST or None, instance=po)
     formset = PurchaseOrderLineFormSet(request.POST or None, instance=po)
@@ -112,18 +109,6 @@ def po_edit(request, pk):
     return render(request, "purchasing/form.html", {
         "form": form, "formset": formset, "title": f"Edit {po.po_number}", "po": po,
     })
-
-
-@group_required(*ALL_GROUPS)
-def po_place(request, pk):
-    po = get_object_or_404(PurchaseOrder, pk=pk)
-    if request.method == "POST":
-        try:
-            place_order(po, request.user, request=request)
-            messages.success(request, f"Purchase order {po.po_number} placed.")
-        except ValidationError as e:
-            messages.error(request, _error_text(e))
-    return redirect("purchasing:detail", pk=pk)
 
 
 @group_required(*ALL_GROUPS)
@@ -193,7 +178,7 @@ def po_cancel(request, pk):
 @group_required(*ALL_GROUPS)
 def po_payment(request, pk):
     po = get_object_or_404(PurchaseOrder, pk=pk)
-    if po.status in ("draft", "cancelled") or po.balance_due <= 0:
+    if po.status == "cancelled" or po.balance_due <= 0:
         messages.error(request, "This purchase order cannot take a payment right now.")
         return redirect("purchasing:detail", pk=pk)
     form = PurchasePaymentForm(request.POST or None, initial={"amount": po.balance_due})
@@ -219,12 +204,8 @@ def po_payment(request, pk):
 @group_required(*ALL_GROUPS)
 def po_print(request, pk):
     po = get_object_or_404(PurchaseOrder.objects.select_related("vendor", "created_by"), pk=pk)
-    if po.status in ("draft", "cancelled"):
-        messages.error(
-            request,
-            "Only placed purchase orders can be viewed in full or printed. "
-            f"This one is {po.get_status_display().lower()}.",
-        )
+    if po.status == "cancelled":
+        messages.error(request, "A cancelled purchase order cannot be viewed in full or printed.")
         return redirect("purchasing:detail", pk=pk)
     return render(request, "purchasing/print.html", {
         "po": po,

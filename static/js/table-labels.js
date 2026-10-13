@@ -18,6 +18,6 @@
       });
     });
   }
-  function run() { document.querySelectorAll("table.data-table, table.app-table, table#invoice-lines, table#po-lines").forEach(label); }
+  function run() { document.querySelectorAll("table.data-table, table.app-table, table#invoice-lines, table#po-lines, table.exp-lines").forEach(label); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();

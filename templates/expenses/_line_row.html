@@ -1,0 +1,7 @@
+<tr class="line-row">{% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}
+  <td data-label="Line" class="line-no">{{ forloop.counter }}</td>
+  <td data-label="Description">{{ line_form.description }}{{ line_form.description.errors }}</td>
+  <td data-label="Amount">{{ line_form.amount }}{{ line_form.amount.errors }}{{ line_form.non_field_errors }}</td>
+  <td data-label="Reference">{{ line_form.reference }}{{ line_form.reference.errors }}</td>
+  <td data-label="Remove" class="line-del-cell">{% if line_form.DELETE %}<div class="d-none">{{ line_form.DELETE }}</div><button type="button" class="line-del-btn" aria-label="Remove line" title="Remove line"><svg aria-hidden="true" width="15" height="15"><use href="#icon-trash"/></svg></button>{% endif %}</td>
+</tr>

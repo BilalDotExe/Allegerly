@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% load money_filters %}
+{% block title %}Expenses | Allegderly{% endblock %}
+{% block content %}
+{% url 'expenses:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="PURCHASING" title="Expenses" subtitle="Write up what the business spends money on." add_url=add_url add_label="New Expense" export_query=export_query %}
+{% url 'expenses:list' as clear_url %}{% include "partials/_date_filter.html" with clear_url=clear_url filter_title="Find expenses" %}
+
+<section class="table-panel" aria-label="Expense list">
+  <div class="table-heading"><div><h2>All expenses</h2><p>Each expense with its categories and lines</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col" class="col-expand"><span class="visually-hidden">Expand</span></th><th scope="col">Expense</th><th scope="col">Name</th><th scope="col">Date</th><th scope="col" class="text-end">Lines</th><th scope="col" class="text-end">Total</th></tr></thead>
+    <tbody>
+      {% for report in page_obj %}
+      <tr class="expandable-row">
+        <td class="col-expand"><button type="button" class="row-expand" aria-expanded="false" aria-controls="exp-detail-{{ report.pk }}" aria-label="Expand {{ report.report_number }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></td>
+        <td><a class="table-primary-link cell-link" href="{% url 'expenses:detail' report.pk %}">{{ report.report_number }}</a></td>
+        <td class="cell-strong">{{ report.name }}</td>
+        <td class="cell-date">{{ report.report_date|date:"M j, Y" }}</td>
+        <td class="text-end">{{ report.lines.all|length }}</td>
+        <td class="text-end cell-balance">{{ report.total|usd }}</td>
+      </tr>
+      <tr class="expand-detail" id="exp-detail-{{ report.pk }}" hidden>
+        <td colspan="6">
+          <div class="expand-card">
+            <table class="expand-lines">
+              <thead><tr><th class="col-line">#</th><th>Description</th><th class="text-end">Amount</th><th>Reference</th></tr></thead>
+              <tbody>{% for group in report.grouped_lines %}<tr class="expand-group"><th colspan="2" scope="rowgroup">{{ group.category|default:"No category" }}</th><th class="text-end">{{ group.total|usd }}</th><th></th></tr>{% for line in group.lines %}<tr><td class="col-line">{{ line.line_no }}</td><td>{{ line.description }}</td><td class="text-end">{{ line.amount|usd }}</td><td>{{ line.reference|default:"—" }}</td></tr>{% endfor %}{% empty %}<tr><td colspan="4" class="text-secondary">No lines.</td></tr>{% endfor %}</tbody>
+            </table>
+            <div class="expand-side">
+              <dl>
+                <div class="is-total"><dt>Total</dt><dd>{{ report.total|usd }}</dd></div>
+              </dl>
+              <a class="btn btn-primary app-primary-button" href="{% url 'expenses:detail' report.pk %}"><span aria-hidden="true"><svg><use href="#icon-arrow-right"/></svg></span> Open full expense</a>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6"><div class="list-empty-state"><span class="empty-mark"><svg aria-hidden="true"><use href="#icon-magnifying-glass"/></svg></span><span><strong>No expenses found</strong><small>Try a different date range or add a new expense.</small></span></div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% include "partials/_pagination.html" %}
+{% endblock %}
+{% block extra_js %}{% load static %}<script src="{% static 'js/row-expand.js' %}"></script>{% endblock %}

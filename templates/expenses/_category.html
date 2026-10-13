@@ -1,0 +1,33 @@
+<section class="exp-cat{% if group.open %} is-open{% endif %}">
+  <div class="exp-cat-head">
+    <button type="button" class="exp-cat-toggle" aria-expanded="{% if group.open %}true{% else %}false{% endif %}">
+      <svg class="exp-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      <span class="exp-cat-title">{{ group.category|default:"New category" }}</span>
+      <span class="exp-cat-meta"></span>
+    </button>
+    <button type="button" class="line-del-btn exp-cat-remove" aria-label="Remove this category" title="Remove this category"><svg aria-hidden="true" width="15" height="15"><use href="#icon-trash"/></svg></button>
+  </div>
+  <div class="exp-cat-body"{% if not group.open %} hidden{% endif %}>
+    <div class="row g-3 exp-cat-pick">
+      <div class="col-md-6">
+        <label class="exp-field"><span class="form-label">Category</span>
+          <select class="form-select exp-cat-select">
+            <option value="">Choose a category…</option>
+            {% for option in category_options %}<option value="{{ option }}"{% if option == group.selected %} selected{% endif %}>{{ option }}</option>{% endfor %}
+            <option value="__other__"{% if group.selected == "__other__" %} selected{% endif %}>Other (type a new one)…</option>
+          </select>
+        </label>
+      </div>
+      <div class="col-md-6 exp-cat-other-wrap"{% if group.selected != "__other__" %} hidden{% endif %}>
+        <label class="exp-field"><span class="form-label">New category name</span>
+          <input type="text" class="form-control exp-cat-other" maxlength="100" autocomplete="off" value="{{ group.custom }}">
+        </label>
+      </div>
+    </div>
+    <div class="table-responsive line-items-wrap mb-3"><table class="table line-items exp-lines" data-numbered>
+      <thead><tr><th class="line-no-head" scope="col">#</th><th scope="col">Description</th><th scope="col">Amount</th><th scope="col">Reference</th><th class="line-del-head" scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
+      <tbody>{% for line_form in group.forms %}{% include "expenses/_line_row.html" %}{% endfor %}</tbody>
+    </table></div>
+    <button type="button" class="btn btn-outline-primary btn-sm exp-add-line">Add line</button>
+  </div>
+</section>

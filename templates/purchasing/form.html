@@ -4,7 +4,7 @@
 <h1 class="form-page-title">{{ title }}</h1>
 <div class="row">
   <div class="col-12">
-    {% if po and po.status != 'draft' %}<p class="form-page-lede">This order has been placed, so the vendor is fixed. Prices and quantities can still be edited; quantities cannot go below what has been received.</p>{% endif %}
+    {% if po and po.vendor_locked %}<p class="form-page-lede">Goods or payments have been recorded against this order, so the vendor is fixed. Prices and quantities can still be edited; quantities cannot go below what has been received.</p>{% endif %}
     <form method="post" class="app-form po-form">
       {% csrf_token %}
       {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
@@ -26,12 +26,13 @@
         <h2 class="card-section-title">Items to buy</h2>
         {{ formset.management_form }}
         {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
-        <div class="table-responsive line-items-wrap mb-3"><table class="table line-items" id="po-lines"><thead><tr><th>Item name</th><th>Quantity</th><th>Buying price</th><th>Delete</th></tr></thead><tbody>
+        <div class="table-responsive line-items-wrap mb-3"><table class="table line-items" id="po-lines" data-numbered><thead><tr><th class="line-no-head" scope="col">#</th><th>Item name</th><th>Quantity</th><th>Buying price</th><th class="line-del-head" scope="col"><span class="visually-hidden">Remove</span></th></tr></thead><tbody>
           {% for line_form in formset %}<tr class="line-row">{% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}
+            <td class="line-no">{{ forloop.counter }}</td>
             <td>{{ line_form.item_name }}{{ line_form.item_name.errors }}{% if line_form.instance.pk and line_form.instance.received_qty %}<div class="form-text received-hint">{{ line_form.instance.received_qty }} already received</div>{% endif %}</td>
             <td>{{ line_form.quantity }}{{ line_form.quantity.errors }}{{ line_form.non_field_errors }}</td>
             <td>{{ line_form.unit_cost }}{{ line_form.unit_cost.errors }}</td>
-            <td>{% if line_form.DELETE %}<div class="form-check">{{ line_form.DELETE }}</div>{% endif %}</td></tr>{% endfor %}
+            <td class="line-del-cell">{% if line_form.DELETE %}<div class="d-none">{{ line_form.DELETE }}</div><button type="button" class="line-del-btn" aria-label="Remove line" title="Remove line"><svg aria-hidden="true" width="15" height="15"><use href="#icon-trash"/></svg></button>{% endif %}</td></tr>{% endfor %}
         </tbody></table></div>
         <button type="button" class="btn btn-outline-primary mb-3" id="add-line">Add line</button>
         <div class="po-summary text-end"><div>Subtotal: <strong id="po-subtotal">$0.00</strong></div><div class="text-muted small">Estimated total incl. tax and shipping: <strong id="po-total">$0.00</strong></div></div>

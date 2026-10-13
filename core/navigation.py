@@ -10,6 +10,7 @@ _SECTIONS = {
     'customers': ('Customers', 'customers:list'),
     'vendors': ('Vendors', 'vendors:list'),
     'purchasing': ('Purchase Orders', 'purchasing:list'),
+    'expenses': ('Expenses', 'expenses:list'),
     'inventory': ('Items', 'inventory:list'),
     'invoices': ('Invoices', 'invoices:list'),
     'production': ('Production Batches', 'production:list'),
@@ -42,19 +43,20 @@ _LEAF_LABELS = {
     'statement_csv': 'Statement', 'place': 'Place order', 'receive': 'Receive goods',
     'close': 'Close', 'cancel': 'Cancel', 'credit_apply': 'Apply credit',
     'credit_refund': 'Mark refunded', 'expiry_create': 'New write-off',
-    'sales': 'Sales', 'outstanding': 'Outstanding', 'stock': 'Stock', 'damages': 'Damages',
+    'expenses': 'Expenses', 'sales': 'Sales', 'outstanding': 'Outstanding', 'stock': 'Stock', 'damages': 'Damages',
     'returns': 'Returns', 'expiry': 'Expiry', 'production': 'Production',
     'employee_create': 'New employee', 'employee_reset_password': 'Reset password',
 }
 # Context variable -> attribute holding a detail page's own name.
 _OBJECT_LABELS = (
     ('invoice', 'invoice_number'), ('credit', 'credit_number'), ('po', 'po_number'),
+    ('expense_report', 'report_number'),
     ('customer', 'name'), ('vendor', 'name'), ('item', 'name'),
 )
 # Detail pages the breadcrumb should link back to when you are one level deeper.
 _DETAIL_URLS = {
     'invoices': 'invoices:detail', 'purchasing': 'purchasing:detail',
-    'customers': 'customers:detail', 'vendors': 'vendors:detail',
+    'customers': 'customers:detail', 'vendors': 'vendors:detail', 'expenses': 'expenses:detail',
     'inventory': 'inventory:detail',
 }
 
@@ -129,6 +131,7 @@ def build_sidebar(request):
         ('Purchasing', [
             _item(request, 'Purchase Orders', 'clipboard-list', 'purchasing:list', ns == 'purchasing'),
             _item(request, 'Vendors', 'building-storefront', 'vendors:list', ns == 'vendors', full),
+            _item(request, 'Expenses', 'banknotes', 'expenses:list', ns == 'expenses', full),
         ]),
         ('Inventory', [
             _item(request, 'Items', 'cube', 'inventory:list', inv_other, full),

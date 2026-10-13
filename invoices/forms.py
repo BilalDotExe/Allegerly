@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django import forms
-from core.forms import BootstrapForm, BootstrapModelForm, TableRowFormMixin
+from core.forms import BootstrapForm, BootstrapModelForm, OptionalWithDefaultMixin, TableRowFormMixin
 from core.models import CompanyProfile
 from .models import Invoice, InvoiceLine, Payment, CreditNote
 from customers.models import Customer
@@ -32,7 +32,10 @@ class InvoiceLineChoiceField(forms.ModelChoiceField):
         )
 
 
-class InvoiceForm(BootstrapModelForm):
+class InvoiceForm(OptionalWithDefaultMixin, BootstrapModelForm):
+    # Only the customer is required; terms and tax fall back to their defaults.
+    optional_with_default = ("payment_terms", "tax_percent")
+
     class Meta:
         model = Invoice
         fields = ["customer", "payment_terms", "tax_percent", "issue_date", "due_date", "notes", "payment_instructions"]
@@ -74,6 +77,26 @@ class InvoiceLineForm(TableRowFormMixin, BootstrapModelForm):
         model = InvoiceLine
         fields = ["item", "quantity", "unit_price", "discount_percent"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The item is the line's "name" and stays required; quantity and price
+        # may be left empty and then default to 1 and the item's sale price.
+        self.fields["quantity"].required = False
+        self.fields["unit_price"].required = False
+        self.fields["quantity"].widget.attrs["placeholder"] = "1"
+        self.fields["unit_price"].widget.attrs["placeholder"] = "Item price"
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get("quantity")
+        return 1 if quantity is None else quantity
+
+    def clean_unit_price(self):
+        price = self.cleaned_data.get("unit_price")
+        if price is not None:
+            return price
+        item = self.cleaned_data.get("item")
+        return item.sale_price if item else Decimal("0.00")
+
     def clean_discount_percent(self):
         val = self.cleaned_data.get('discount_percent')
         return val if val is not None else Decimal('0')
@@ -85,8 +108,6 @@ InvoiceLineFormSet = forms.inlineformset_factory(
     form=InvoiceLineForm,
     extra=1,
     can_delete=True,
-    min_num=1,
-    validate_min=True,
 )
 
 

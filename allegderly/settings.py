@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'customers',
     'vendors',
     'purchasing',
+    'expenses',
     'inventory',
     'invoices',
     'damages',

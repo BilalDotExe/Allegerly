@@ -13,11 +13,12 @@
       </div>
     </div></div>
 
-    <div class="table-responsive line-items-wrap mb-3"><table class="table line-items receive-table" id="receive-lines">
-      <thead><tr><th scope="col">Item name</th><th scope="col" class="text-end">Ordered</th><th scope="col" class="text-end">Received</th><th scope="col" class="text-end">Outstanding</th><th scope="col">Receive now</th><th scope="col">Buying price</th></tr></thead>
+    <div class="table-responsive line-items-wrap mb-3"><table class="table line-items receive-table" id="receive-lines" data-numbered>
+      <thead><tr><th scope="col" class="line-no-head">#</th><th scope="col">Item name</th><th scope="col" class="text-end">Ordered</th><th scope="col" class="text-end">Received</th><th scope="col" class="text-end">Outstanding</th><th scope="col">Receive now</th><th scope="col">Buying price</th></tr></thead>
       <tbody>
         {% for line, f in line_forms %}
         <tr class="line-row">
+          <td class="line-no">{{ forloop.counter }}</td>
           <td class="cell-wide cell-strong">{{ line.item_name }}</td>
           <td class="text-end">{{ line.quantity }}</td><td class="text-end">{{ line.received_qty }}</td><td class="text-end">{{ line.outstanding_qty }}</td>
           <td>{{ f.quantity }}{% if f.quantity.errors %}<div class="text-danger small">{{ f.quantity.errors|join:" " }}</div>{% endif %}</td>
