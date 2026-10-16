@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'customers',
     'vendors',
     'purchasing',
+    'expenses',
     'inventory',
     'invoices',
     'damages',
@@ -45,17 +46,20 @@ INSTALLED_APPS = [
     'production',
     'reports',
     'audit',
+    'businesses',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'businesses.middleware.BusinessMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'axes.middleware.AxesMiddleware',
+    'core.middleware.ViewOnlyWriteGuard',
 ]
 
 ROOT_URLCONF = 'allegderly.urls'
@@ -79,12 +83,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'allegderly.wsgi.application'
 
+# 'default' is the control database: the list of businesses, login sessions
+# and lockouts. Each business's own data lives in BUSINESS_DB_DIR/<code>.sqlite3
+# and is connected on demand (see businesses/db.py).
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'control.sqlite3',
     }
 }
+DATABASE_ROUTERS = ['businesses.router.BusinessRouter']
+BUSINESS_DB_DIR = BASE_DIR / 'business_dbs'
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -128,19 +137,23 @@ SESSION_COOKIE_SAMESITE = 'Strict'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 3600  # 1 hour of inactivity
 SESSION_SAVE_EVERY_REQUEST = True
-SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', str(not DEBUG)) == 'True'
 
 # CSRF security
 CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SECURE = not DEBUG
-
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', str(not DEBUG)) == 'True'
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
 # Security headers (SECURE_BROWSER_XSS_FILTER removed — dropped in Django 4.0)
 X_FRAME_OPTIONS = 'DENY'
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# Production-only hardening (Raspberry Pi / Nginx later)
+
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
     # Nginx terminates TLS and sets this header so Django knows the request was HTTPS
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     STATIC_ROOT = BASE_DIR / 'staticfiles'
