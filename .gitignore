@@ -12,7 +12,7 @@ env/
 # Secrets and local config
 .env
 .env.*
-!.env.example
+!.env. example
 
 # Django and local data
 db.sqlite3
@@ -35,4 +35,7 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
-cursor rules.md
+control.sqlite3
+business_dbs
+.claude
+.agents
