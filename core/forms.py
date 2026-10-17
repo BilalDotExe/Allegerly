@@ -106,6 +106,29 @@ class TableRowFormMixin:
             field.widget.attrs.setdefault("aria-label", f"{field.label}{suffix}")
 
 
+class OptionalWithDefaultMixin:
+    """Fields named in `optional_with_default` may be left empty.
+
+    An empty field then takes the model's default instead of raising "This
+    field is required", so staff only have to fill in what they actually know.
+    """
+
+    optional_with_default = ()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in self.optional_with_default:
+            self.fields[name].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        for name in self.optional_with_default:
+            field = self.fields[name]
+            if name in cleaned and cleaned[name] in field.empty_values:
+                cleaned[name] = self._meta.model._meta.get_field(name).get_default()
+        return cleaned
+
+
 class BootstrapModelForm(BootstrapFormMixin, forms.ModelForm):
     pass
 
