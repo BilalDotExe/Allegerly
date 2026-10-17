@@ -26,6 +26,14 @@ class DamageReport(models.Model):
     )
     quantity = models.PositiveIntegerField()
     date_reported = models.DateField()
+    stock_movement = models.OneToOneField(
+        'inventory.StockMovement',
+        on_delete=models.PROTECT,
+        related_name='damage_report',
+        null=True,
+        blank=True,
+        help_text='Set once this damage has been reconciled with a manual stock adjustment.',
+    )
     note = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -1,0 +1,16 @@
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('invoices', '0004_alter_creditnote_reason'),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name='invoice',
+            name='payment_instructions',
+            field=models.TextField(blank=True, null=True),
+        ),
+    ]

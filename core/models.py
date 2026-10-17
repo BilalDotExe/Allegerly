@@ -19,6 +19,11 @@ class CompanyProfile(models.Model):
         max_length=255, blank=True, default='Thank you for your business.',
         help_text='Printed at the bottom of every invoice.',
     )
+    payment_instructions = models.TextField(
+        blank=True,
+        help_text='How customers should pay you (bank details, cheque payee, etc.). '
+                  'Copied onto each new invoice, where it can still be changed.',
+    )
 
     class Meta:
         verbose_name_plural = 'company profile'

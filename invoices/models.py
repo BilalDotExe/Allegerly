@@ -64,10 +64,25 @@ class Invoice(models.Model):
         ('voided', 'Voided'),
     ]
 
+    TERMS_ON_RECEIPT = 'due_on_receipt'
+    TERMS_NET_15 = 'net_15'
+    TERMS_NET_30 = 'net_30'
+    TERMS_NET_45 = 'net_45'
+    TERMS_NET_60 = 'net_60'
+    TERMS_CHOICES = [
+        (TERMS_ON_RECEIPT, 'Due on receipt'),
+        (TERMS_NET_15, 'Net 15'),
+        (TERMS_NET_30, 'Net 30'),
+        (TERMS_NET_45, 'Net 45'),
+        (TERMS_NET_60, 'Net 60'),
+    ]
+
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='invoices')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
     invoice_number = models.CharField(max_length=50, unique=True, blank=True)
     tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
+    payment_terms = models.CharField(max_length=20, choices=TERMS_CHOICES, default=TERMS_NET_30)
+    payment_instructions = models.TextField(blank=True, null=True)
     issue_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
@@ -167,6 +182,9 @@ class InvoiceLine(models.Model):
     item = models.ForeignKey('inventory.Item', on_delete=models.PROTECT, related_name='invoice_lines')
     quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal('0.00'), blank=True
+    )
 
     @property
     def line_total(self):
@@ -239,6 +257,13 @@ class CreditNote(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, related_name='credit_notes')
     return_record = models.OneToOneField(
         'returns.ReturnRecord',
+        on_delete=models.PROTECT,
+        related_name='credit_note',
+        null=True,
+        blank=True,
+    )
+    damage_report = models.OneToOneField(
+        'damages.DamageReport',
         on_delete=models.PROTECT,
         related_name='credit_note',
         null=True,

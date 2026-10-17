@@ -35,4 +35,7 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
-cursor rules.md
+control.sqlite3
+business_dbs
+.claude
+.agents

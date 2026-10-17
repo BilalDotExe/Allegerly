@@ -537,6 +537,20 @@ button, .btn, a, summary, label, .side-link, .row-expand, .icon-btn, input, sele
 .contact-info { max-width: 340px; margin: 22px auto 0; }
 .contact-info p { margin: 0 0 10px; }
 
+/* Expense entry: one collapsible section per category. */
+.expense-section { overflow: hidden; }
+.expense-section-summary { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: #f8faf9; border-bottom: 1px solid transparent; color: var(--ink); font-size: 13px; font-weight: 650; cursor: pointer; list-style: none; transition: background-color .25s var(--ease); }
+.expense-section-summary::-webkit-details-marker { display: none; }
+.expense-section-summary:hover { background: var(--accent-soft); }
+.expense-section-summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.expense-section[open] .expense-section-summary { border-bottom-color: var(--line); }
+/* Disclosure chevron, rotated when the section is open. */
+.expense-section-summary::before { content: "›"; width: 14px; flex: none; color: var(--faint); font-size: 16px; line-height: 1; text-align: center; transition: transform .25s var(--ease); }
+.expense-section[open] .expense-section-summary::before { transform: rotate(90deg); }
+.expense-section-name { flex: 1 1 auto; }
+.expense-section-total { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 600; }
+.category-custom-wrap[hidden] { display: none; }
+
 /* Customer list row-expand: a definition list instead of a line-items table. */
 .expand-lines-list { margin: 0; align-self: start; }
 .expand-lines-list > div { display: flex; gap: 14px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }

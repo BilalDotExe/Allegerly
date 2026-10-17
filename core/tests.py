@@ -128,6 +128,69 @@ class AdminSitePermissionTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class MigrationStateTests(TestCase):
+    def test_no_model_changes_are_missing_a_migration(self):
+        """A model field without a migration breaks the next deployment.
+
+        Tests build their database from the migrations, so a model field that
+        no migration creates passes every other test and then fails on the Pi.
+        """
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        try:
+            call_command('makemigrations', '--check', '--dry-run', stdout=out, stderr=out)
+        except SystemExit:
+            self.fail(f'Models have changes with no migration:\n{out.getvalue()}')
+
+
+class ViewOnlyWriteGuardTests(TestCase):
+    """The middleware is a safety net, so test it against real URLs."""
+
+    def setUp(self):
+        password = 'test-pass-123'
+        self.client = Client()
+
+        self.view_user = User.objects.create_user('view_u', password=password)
+        self.view_user.groups.add(Group.objects.get(name=GROUP_VIEW_ONLY))
+
+        # Someone in both groups must keep their write access
+        self.dual_user = User.objects.create_user('dual_u', password=password)
+        self.dual_user.groups.add(Group.objects.get(name=GROUP_VIEW_ONLY))
+        self.dual_user.groups.add(Group.objects.get(name=GROUP_STAFF))
+
+        self.staff_user = User.objects.create_user('staff_u', password=password)
+        self.staff_user.groups.add(Group.objects.get(name=GROUP_STAFF))
+
+    def test_view_only_can_still_read(self):
+        self.client.force_login(self.view_user)
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_only_post_is_forbidden(self):
+        self.client.force_login(self.view_user)
+        response = self.client.post(reverse('customers:create'), {})
+        self.assertEqual(response.status_code, 403)
+
+    def test_view_only_can_log_out(self):
+        """Logout is a POST and must stay reachable, or they are stuck."""
+        self.client.force_login(self.view_user)
+        response = self.client.post(reverse('logout'))
+        self.assertNotEqual(response.status_code, 403)
+
+    def test_second_group_keeps_write_access(self):
+        self.client.force_login(self.dual_user)
+        response = self.client.post(reverse('customers:create'), {})
+        self.assertNotEqual(response.status_code, 403)
+
+    def test_staff_post_not_blocked_by_guard(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.post(reverse('customers:create'), {})
+        self.assertNotEqual(response.status_code, 403)
+
+
 class DashboardChartTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_superuser('chartuser', password='pw12345!x')

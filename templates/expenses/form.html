@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Allegderly{% endblock %}
+{% block content %}
+<h1 class="form-page-title">{{ title }}</h1>
+<div class="row">
+  <div class="col-xl-10">
+    <form method="post" class="app-form expense-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+      <div class="card mb-3"><div class="card-body">
+        <h2 class="card-section-title">Report details</h2>
+        <div class="row g-3">
+          <div class="col-md-6">{% include "partials/_form_field.html" with field=form.name %}</div>
+          <div class="col-md-3">{% include "partials/_form_field.html" with field=form.report_date %}</div>
+          <div class="col-12">{% include "partials/_form_field.html" with field=form.notes %}</div>
+        </div>
+      </div></div>
+
+      <div class="card mb-3"><div class="card-body">
+        <h2 class="card-section-title">What the money went on</h2>
+        <p class="form-page-lede">Pick a category, then list each thing you spent on under it. Add another section for a different category.</p>
+        {{ formset.management_form }}
+        {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
+
+        <div id="expense-sections">
+          {% for group in groups %}
+          <details class="expense-section card mb-3" {% if group.open %}open{% endif %}>
+            <summary class="expense-section-summary">
+              <span class="expense-section-name">{{ group.category|default:"New category" }}</span>
+              <span class="expense-section-total">$0.00</span>
+            </summary>
+            <div class="card-body">
+              <div class="row g-3 mb-3">
+                <div class="col-md-5">
+                  <label class="form-label" for="category-select-{{ forloop.counter0 }}">Category</label>
+                  <select class="form-select category-select" id="category-select-{{ forloop.counter0 }}">
+                    <option value="">Choose a category…</option>
+                    {% for option in category_options %}<option value="{{ option }}" {% if group.selected == option %}selected{% endif %}>{{ option }}</option>{% endfor %}
+                    <option value="__other__" {% if group.selected == "__other__" %}selected{% endif %}>Other (type it in)</option>
+                  </select>
+                </div>
+                <div class="col-md-5 category-custom-wrap" {% if group.selected != "__other__" %}hidden{% endif %}>
+                  <label class="form-label" for="category-custom-{{ forloop.counter0 }}">New category name</label>
+                  <input type="text" class="form-control category-custom" id="category-custom-{{ forloop.counter0 }}" maxlength="100" value="{{ group.custom }}" placeholder="e.g. Licences">
+                </div>
+              </div>
+
+              <div class="table-responsive line-items-wrap mb-3"><table class="table line-items">
+                <thead><tr><th scope="col">Description</th><th scope="col">Amount</th><th scope="col">Reference</th><th scope="col">Delete</th></tr></thead>
+                <tbody>
+                  {% for line_form in group.forms %}
+                  <tr class="line-row">
+                    {% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}
+                    <td>{{ line_form.description }}{{ line_form.description.errors }}{{ line_form.non_field_errors }}</td>
+                    <td>{{ line_form.amount }}{{ line_form.amount.errors }}</td>
+                    <td>{{ line_form.reference }}{{ line_form.reference.errors }}</td>
+                    <td>{% if line_form.DELETE %}<div class="form-check">{{ line_form.DELETE }}</div>{% endif %}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table></div>
+              <button type="button" class="btn btn-outline-primary btn-sm add-line">Add line</button>
+            </div>
+          </details>
+          {% endfor %}
+        </div>
+
+        <button type="button" class="btn btn-outline-primary mb-3" id="add-section">Add category section</button>
+        <div class="po-summary text-end"><div>Report total: <strong id="expense-total">$0.00</strong></div></div>
+      </div></div>
+
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-outline-secondary ms-2" href="{% if expense_report %}{% url 'expenses:detail' expense_report.pk %}{% else %}{% url 'expenses:list' %}{% endif %}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+(function () {
+  var form = document.querySelector('.expense-form'),
+      wrap = document.getElementById('expense-sections'),
+      addSection = document.getElementById('add-section'),
+      total = document.getElementById('id_lines-TOTAL_FORMS');
+  if (!form || !wrap || !addSection || !total) return;
+
+  function money(n) { return '$' + (Math.round(n * 100) / 100).toFixed(2); }
+
+  // The category lives on a hidden field per row, so every row in a section
+  // carries whatever that section's dropdown (or "Other" box) currently says.
+  function categoryOf(section) {
+    var select = section.querySelector('.category-select'),
+        custom = section.querySelector('.category-custom');
+    return select.value === '__other__' ? (custom ? custom.value.trim() : '') : select.value;
+  }
+
+  function syncSection(section) {
+    var name = categoryOf(section);
+    section.querySelectorAll('[name$="-category"]').forEach(function (input) { input.value = name; });
+    var label = section.querySelector('.expense-section-name');
+    if (label) label.textContent = name || 'New category';
+    var wrapper = section.querySelector('.category-custom-wrap'),
+        select = section.querySelector('.category-select');
+    if (wrapper) wrapper.hidden = select.value !== '__other__';
+  }
+
+  function recalc() {
+    var grand = 0;
+    wrap.querySelectorAll('.expense-section').forEach(function (section) {
+      var sum = 0;
+      section.querySelectorAll('.line-row').forEach(function (row) {
+        var amount = parseFloat(row.querySelector('[name$="-amount"]').value) || 0,
+            del = row.querySelector('[name$="-DELETE"]');
+        if (!(del && del.checked)) sum += amount;
+      });
+      var cell = section.querySelector('.expense-section-total');
+      if (cell) cell.textContent = money(sum);
+      grand += sum;
+    });
+    document.getElementById('expense-total').textContent = money(grand);
+  }
+
+  function renumber(row, index) {
+    row.querySelectorAll('input,select,textarea,label').forEach(function (el) {
+      if (el.name) el.name = el.name.replace(/-\d+-/g, '-' + index + '-');
+      if (el.id) el.id = el.id.replace(/-\d+-/g, '-' + index + '-');
+      if (el.htmlFor) el.htmlFor = el.htmlFor.replace(/-\d+-/g, '-' + index + '-');
+      if (el.type === 'checkbox') el.checked = false;
+      else if (el.type !== 'hidden' || /-id$/.test(el.name || '')) el.value = '';
+    });
+    row.querySelectorAll('.text-danger, .errorlist').forEach(function (n) { n.remove(); });
+  }
+
+  function addRow(section) {
+    var body = section.querySelector('.line-items tbody'),
+        rows = body.querySelectorAll('.line-row'),
+        row = rows[rows.length - 1].cloneNode(true);
+    renumber(row, Number(total.value));
+    body.appendChild(row);
+    total.value = Number(total.value) + 1;
+    syncSection(section);
+    recalc();
+  }
+
+  addSection.addEventListener('click', function () {
+    var section = wrap.querySelector('.expense-section').cloneNode(true),
+        body = section.querySelector('.line-items tbody'),
+        rows = body.querySelectorAll('.line-row');
+
+    // Keep one row; drop the rest of the copied section's rows.
+    for (var i = 1; i < rows.length; i++) rows[i].remove();
+    renumber(rows[0], Number(total.value));
+    total.value = Number(total.value) + 1;
+
+    section.querySelector('.category-select').value = '';
+    var custom = section.querySelector('.category-custom');
+    if (custom) custom.value = '';
+    section.open = true;
+
+    // Labels and ids copied from the cloned section would now be duplicates.
+    var index = wrap.querySelectorAll('.expense-section').length;
+    section.querySelectorAll('.category-select, .category-custom').forEach(function (el) {
+      var base = el.classList.contains('category-select') ? 'category-select-' : 'category-custom-';
+      el.id = base + index;
+      var label = section.querySelector('label[for^="' + base + '"]');
+      if (label) label.htmlFor = el.id;
+    });
+
+    wrap.appendChild(section);
+    syncSection(section);
+    recalc();
+    section.querySelector('.category-select').focus();
+  });
+
+  wrap.addEventListener('click', function (event) {
+    var button = event.target.closest('.add-line');
+    if (button) addRow(button.closest('.expense-section'));
+  });
+
+  wrap.addEventListener('change', function (event) {
+    var section = event.target.closest('.expense-section');
+    if (section && event.target.matches('.category-select, .category-custom')) syncSection(section);
+  });
+  wrap.addEventListener('input', function (event) {
+    var section = event.target.closest('.expense-section');
+    if (section && event.target.matches('.category-custom')) syncSection(section);
+  });
+
+  form.addEventListener('input', recalc);
+  form.addEventListener('change', recalc);
+
+  wrap.querySelectorAll('.expense-section').forEach(syncSection);
+  recalc();
+})();
+</script>{% endblock %}

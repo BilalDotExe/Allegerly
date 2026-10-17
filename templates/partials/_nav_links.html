@@ -8,6 +8,7 @@
   {% endif %}
   <a class="side-link {% if request.resolver_match.namespace == 'purchasing' %}active{% endif %}" href="{% url 'purchasing:list' %}"><span class="nav-glyph">⊞</span>Purchase Orders</a>
   {% if not is_employee %}
+  <a class="side-link {% if request.resolver_match.namespace == 'expenses' %}active{% endif %}" href="{% url 'expenses:list' %}"><span class="nav-glyph">⛁</span>Expenses</a>
   <a class="side-link {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name != 'movements' and request.resolver_match.url_name != 'expiry_list' and request.resolver_match.url_name != 'expiry_form' and request.resolver_match.url_name != 'adjust' %}active{% endif %}" href="{% url 'inventory:list' %}"><span class="nav-glyph">▤</span>Items</a>
   {% endif %}
   <a class="side-link {% if request.resolver_match.namespace == 'invoices' and request.resolver_match.url_name != 'credit_list' and request.resolver_match.url_name != 'credit_detail' and request.resolver_match.url_name != 'credit_apply' and request.resolver_match.url_name != 'credit_refund' %}active{% endif %}" href="{% url 'invoices:list' %}"><span class="nav-glyph">▧</span>Invoices</a>

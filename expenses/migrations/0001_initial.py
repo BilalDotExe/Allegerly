@@ -1,0 +1,49 @@
+import django.core.validators
+import django.db.models.deletion
+from decimal import Decimal
+from django.conf import settings
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    initial = True
+
+    dependencies = [
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='ExpenseReport',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('report_number', models.CharField(blank=True, max_length=50, unique=True)),
+                ('name', models.CharField(max_length=200, verbose_name='Report name')),
+                ('report_date', models.DateField(verbose_name='Date')),
+                ('paid_to', models.CharField(blank=True, max_length=200, verbose_name='Paid to')),
+                ('payment_method', models.CharField(blank=True, choices=[('cash', 'Cash'), ('bank_transfer', 'Bank Transfer'), ('cheque', 'Cheque')], max_length=20)),
+                ('reference', models.CharField(blank=True, help_text='Receipt, cheque or transfer reference.', max_length=100)),
+                ('notes', models.TextField(blank=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                'ordering': ('-report_date', '-id'),
+            },
+        ),
+        migrations.CreateModel(
+            name='ExpenseLine',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('description', models.CharField(help_text='What the money was spent on. Free text.', max_length=200)),
+                ('category', models.CharField(blank=True, help_text='Type any category; earlier ones are suggested.', max_length=100)),
+                ('amount', models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10, validators=[django.core.validators.MinValueValidator(Decimal('0'))])),
+                ('report', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lines', to='expenses.expensereport')),
+            ],
+            options={
+                'ordering': ('id',),
+            },
+        ),
+    ]
