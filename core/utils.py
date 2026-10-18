@@ -45,11 +45,15 @@ def generate_temp_password(length=8):
     return "".join(chars)
 
 
-def get_expiring_batches(days=30):
-    today = timezone.now().date()
-    cutoff = today + timedelta(days=days)
+def get_expiring_batches(days=30, past_days=0):
+    """Batches expiring in the next `days`, plus any that expired in the last `past_days`.
+
+    Batches don't record what's left of them, so one that expired last week may
+    still be on the shelf; past_days keeps it visible until someone deals with it.
+    """
+    today = timezone.localdate()
     return ProductionBatch.objects.filter(
         expiry_date__isnull=False,
-        expiry_date__gte=today,
-        expiry_date__lte=cutoff
+        expiry_date__gte=today - timedelta(days=past_days),
+        expiry_date__lte=today + timedelta(days=days),
     ).order_by('expiry_date')

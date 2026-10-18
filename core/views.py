@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import LoginView, LogoutView
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Sum
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -142,24 +143,36 @@ def employee_delete(request, pk):
 def dashboard(request):
     if is_employee(request.user):
         return render(request, "core/dashboard_employee.html", build_employee_dashboard())
-    items = Item.objects.all().order_by("name")
-    low_stock_items = [item for item in items if item.is_low_stock()]
     today = timezone.localdate()
-    outstanding_invoices = list(
-        Invoice.objects.select_related("customer")
-        .filter(status__in=("issued", "paid"))
-        .order_by("due_date", "-created_at")
-    )
-    outstanding_invoices = [invoice for invoice in outstanding_invoices if invoice.balance_due > 0]
-    for invoice in outstanding_invoices:
-        invoice.days_overdue = max((today - invoice.due_date).days, 0) if invoice.due_date else 0
-    expiring_batches = get_expiring_batches().select_related("item")[:6]
     context = build_dashboard(parse_range(request.GET.get("range")), today)
+
+    # Stock and balances come from bulk queries; item.current_stock() and
+    # invoice.balance_due each cost queries per row, which adds up on the Pi.
+    items = Item.objects.annotate(stock=Coalesce(Sum("movements__quantity"), 0)).order_by("name")
+    low_stock_items = [item for item in items if item.stock <= item.reorder_level]
+
+    open_rows = sorted(
+        (r for r in context.pop("invoice_rows") if r["balance"] > 0),
+        key=lambda r: (r["due_date"] is None, r["due_date"] or today),
+    )
+    shown = Invoice.objects.select_related("customer").in_bulk([r["id"] for r in open_rows[:6]])
+    outstanding_invoices = []
+    for row in open_rows[:6]:
+        invoice = shown[row["id"]]
+        invoice.balance = row["balance"]
+        invoice.days_overdue = max((today - row["due_date"]).days, 0) if row["due_date"] else 0
+        outstanding_invoices.append(invoice)
+
+    expiring_batches = list(get_expiring_batches(past_days=30).select_related("item")[:6])
+    for batch in expiring_batches:
+        batch.days_left = (batch.expiry_date - today).days
+        batch.days_ago = -batch.days_left
+
     return render(request, "core/dashboard.html", {
         **context,
         "low_stock_items": low_stock_items[:6],
         "low_stock_total": len(low_stock_items),
-        "outstanding_invoices": outstanding_invoices[:6],
-        "outstanding_total": len(outstanding_invoices),
+        "outstanding_invoices": outstanding_invoices,
+        "outstanding_total": len(open_rows),
         "expiring_batches": expiring_batches,
     })

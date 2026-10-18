@@ -110,6 +110,7 @@
   .app-table > tbody > tr > td { display: block; padding: 0 !important; border: 0; font-size: 13px; background: transparent !important; min-width: 0; overflow-wrap: anywhere; }
   .app-table > tbody > tr > td::before { content: attr(data-label); display: block; margin-bottom: 1px; color: var(--faint); font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
   .app-table > tbody > tr > td[colspan] { grid-column: 1 / -1; }
+  .app-table > tbody > tr > td.num-cell { text-align: left; }
   .app-table > tbody > tr > td[colspan]::before { display: none; }
   .app-table > tbody > tr:has(> td[colspan]) { display: block; border: 0; padding: 0; background: transparent; }
   .app-table .empty-state { min-height: 0; padding: 14px 6px 16px; }

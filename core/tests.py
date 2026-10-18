@@ -171,6 +171,81 @@ class DashboardChartTests(TestCase):
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
 
 
+class DashboardFixTests(TestCase):
+    """Month-to-date comparisons, recently expired batches and bulk-loaded tables."""
+
+    def setUp(self):
+        from customers.models import Customer
+        from inventory.models import Item
+        self.user = User.objects.create_superuser('dashfix', password='pw12345!x')
+        self.client = Client()
+        self.client.force_login(self.user)
+        self.customer = Customer.objects.create(first_name='Acme')
+        self.item = Item.objects.create(sku='S1', name='Soap', cost_price=Decimal('2'),
+                                        sale_price=Decimal('5'), reorder_level=10)
+
+    def _issued_invoice(self, issue_date, qty=1, due_date=None):
+        from invoices.models import Invoice, InvoiceLine
+        invoice = Invoice.objects.create(customer=self.customer, created_by=self.user)
+        InvoiceLine.objects.create(invoice=invoice, item=self.item, quantity=qty, unit_price=Decimal('5.00'))
+        invoice.status = 'issued'
+        invoice.issue_date = issue_date
+        invoice.due_date = due_date or issue_date
+        invoice.save()
+        return invoice
+
+    def test_revenue_compares_with_same_point_last_month(self):
+        from datetime import date
+        from core.dashboard_data import build_dashboard
+        today = date(2026, 10, 18)
+        self._issued_invoice(date(2026, 10, 5), qty=2)    # $10 this month
+        self._issued_invoice(date(2026, 9, 10), qty=2)    # $10 by Sep 18 -> counts
+        self._issued_invoice(date(2026, 9, 25), qty=20)   # $100 after Sep 18 -> ignored
+        revenue = next(k for k in build_dashboard(6, today)['kpis'] if k['label'] == 'Revenue this month')
+        self.assertEqual(revenue['value'], '$10.00')
+        self.assertTrue(revenue['delta']['flat'])
+        self.assertIn('$10.00', revenue['foot'])
+
+    def test_same_point_clamps_to_end_of_short_month(self):
+        from datetime import date
+        from core.dashboard_data import _same_point_last_month
+        self.assertEqual(_same_point_last_month(date(2026, 3, 31)), (date(2026, 2, 1), date(2026, 2, 28)))
+        self.assertEqual(_same_point_last_month(date(2026, 1, 15)), (date(2025, 12, 1), date(2025, 12, 15)))
+
+    def test_recently_expired_batch_still_shown(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from production.models import ProductionBatch
+        today = timezone.localdate()
+        for code, offset in (('OLD', -45), ('GONE', -3), ('SOON', 5)):
+            ProductionBatch.objects.create(
+                batch_code=code, item=self.item, quantity_produced=12, created_by=self.user,
+                production_date=today - timedelta(days=60), expiry_date=today + timedelta(days=offset),
+            )
+        response = self.client.get(reverse('dashboard'))
+        self.assertContains(response, 'Expired 3 days ago')
+        self.assertContains(response, '5 days left')
+        self.assertNotContains(response, 'OLD')
+
+    def test_tables_use_bulk_figures_with_bounded_queries(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from inventory.models import Item
+        today = timezone.localdate()
+        for i in range(8):
+            Item.objects.create(sku=f'L{i}', name=f'Low {i}', cost_price=Decimal('1'),
+                                sale_price=Decimal('2'), reorder_level=5)
+            self._issued_invoice(today - timedelta(days=40 - i), due_date=today - timedelta(days=30 - i))
+        self.client.get(reverse('dashboard'))  # warm session/business lookups
+        with self.assertNumQueries(22):
+            response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.context['outstanding_total'], 8)
+        self.assertEqual(response.context['low_stock_total'], 9)
+        first = response.context['outstanding_invoices'][0]
+        self.assertEqual(first.balance, Decimal('5.00'))
+        self.assertEqual(first.days_overdue, 30)
+
+
 class ChartHelperTests(TestCase):
     def test_nice_max_and_empty_sparkline(self):
         from core.charts import nice_max, sparkline, delta

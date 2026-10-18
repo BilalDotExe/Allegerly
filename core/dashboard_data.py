@@ -1,5 +1,6 @@
 """Aggregations behind the dashboard charts. A handful of queries, no per-row N+1."""
 
+import calendar
 from collections import defaultdict
 from decimal import Decimal
 
@@ -70,6 +71,22 @@ def _by_month(pairs):
     return out
 
 
+def _sum_between(pairs, first, last):
+    """Sum (date, amount) pairs dated first..last inclusive."""
+    return sum((Decimal(a) for d, a in pairs if d is not None and first <= d <= last), ZERO)
+
+
+def _same_point_last_month(today):
+    """(first, last) of last month, cut off at today's day-of-month.
+
+    Month-to-date figures are compared against this, not the whole of last
+    month, or every month looks like a drop until the last few days.
+    """
+    first = month_starts(today, 2)[0]
+    last_day = calendar.monthrange(first.year, first.month)[1]
+    return first, first.replace(day=min(today.day, last_day))
+
+
 def _ageing(rows, today):
     buckets = [("Current", ZERO, "ok"), ("1–30 days", ZERO, "warn"),
                ("31–60 days", ZERO, "warn2"), ("61–90 days", ZERO, "bad"),
@@ -123,32 +140,36 @@ def build_dashboard(range_months=6, today=None):
     today = today or timezone.localdate()
     months = month_starts(today, range_months)
     start = months[0]
-    this_k, prev_k = month_key(months[-1]), month_key(month_starts(today, 2)[0])
+    this_k = month_key(months[-1])
+    prev_first, prev_last = _same_point_last_month(today)
 
     rows = _invoice_rows()
 
     # ---- Sales (invoice totals by issue month) ----
-    sales = _by_month((r["issue_date"], r["total"]) for r in rows if r["issue_date"])
+    sale_pairs = [(r["issue_date"], r["total"]) for r in rows if r["issue_date"]]
+    sales = _by_month(sale_pairs)
 
     # ---- Cash flow ----
-    money_in = _by_month(
+    payment_pairs = list(
         Payment.objects.filter(is_voided=False, payment_date__gte=start)
         .values_list("payment_date", "amount")
     )
+    money_in = _by_month(payment_pairs)
     money_out = _by_month(
         CreditNote.objects.filter(is_refunded=True, refund_date__gte=start)
         .values_list("refund_date", "amount")
     )
 
     # ---- Losses ----
-    damage = _by_month(
+    damage_pairs = [
         (d, qty * cost) for d, qty, cost in DamageReport.objects.filter(date_reported__gte=start)
         .values_list("date_reported", "quantity", "item__cost_price")
-    )
-    expiry = _by_month(
+    ]
+    expiry_pairs = [
         (d, qty * cost) for d, qty, cost in ExpiryWriteOff.objects.filter(date_noticed__gte=start)
         .values_list("date_noticed", "quantity", "item__cost_price")
-    )
+    ]
+    damage, expiry = _by_month(damage_pairs), _by_month(expiry_pairs)
     returns = _by_month(
         (timezone.localtime(created).date(), amount)
         for created, amount in CreditNote.objects.filter(
@@ -180,10 +201,12 @@ def build_dashboard(range_months=6, today=None):
     # ---- KPIs ----
     rev_series = [sales.get(month_key(m), ZERO) for m in months]
     loss_series = [damage.get(month_key(m), ZERO) + expiry.get(month_key(m), ZERO) for m in months]
-    rev_now, rev_prev = sales.get(this_k, ZERO), sales.get(prev_k, ZERO)
+    rev_now = sales.get(this_k, ZERO)
+    rev_prev = _sum_between(sale_pairs, prev_first, prev_last)
     loss_now = damage.get(this_k, ZERO) + expiry.get(this_k, ZERO)
-    loss_prev = damage.get(prev_k, ZERO) + expiry.get(prev_k, ZERO)
+    loss_prev = _sum_between(damage_pairs + expiry_pairs, prev_first, prev_last)
     cash_now = money_in.get(this_k, ZERO)
+    cash_prev = _sum_between(payment_pairs, prev_first, prev_last)
     cash_series = [money_in.get(month_key(m), ZERO) for m in months]
     overdue_count = sum(
         1 for r in rows
@@ -194,11 +217,11 @@ def build_dashboard(range_months=6, today=None):
     kpis = [
         {"label": "Revenue this month", "value": fmt_money(rev_now), "delta": delta(rev_now, rev_prev),
          "good_up": True, "spark": sparkline(rev_series), "tone": "accent",
-         "foot": f"vs {fmt_money(rev_prev)} last month"},
+         "foot": f"vs {fmt_money(rev_prev)} by this day last month"},
         {"label": "Cash received", "value": fmt_money(cash_now),
-         "delta": delta(cash_now, money_in.get(prev_k, ZERO)), "good_up": True,
+         "delta": delta(cash_now, cash_prev), "good_up": True,
          "spark": sparkline(cash_series), "tone": "accent",
-         "foot": "payments this month"},
+         "foot": f"vs {fmt_money(cash_prev)} by this day last month"},
         {"label": "Outstanding", "value": fmt_money(receivables), "delta": None, "spark": None,
          "tone": "neutral", "foot": f"{open_count} open invoice{'s' if open_count != 1 else ''}"},
         {"label": "Overdue", "value": fmt_money(overdue), "delta": None, "spark": None,
@@ -210,6 +233,7 @@ def build_dashboard(range_months=6, today=None):
     ]
 
     return {
+        "invoice_rows": rows,  # reused by the view for the outstanding table
         "range_months": range_months,
         "ranges": RANGES,
         "kpis": kpis,
