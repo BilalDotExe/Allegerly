@@ -174,10 +174,26 @@ class EmployeeCreateForm(BootstrapForm):
         help_text="Leave blank, or click Generate, for a random 8-character password.",
     )
 
+    def __init__(self, *args, suffix="", **kwargs):
+        # The business's fixed suffix, shown beside the field and always appended.
+        self.suffix = suffix
+        super().__init__(*args, **kwargs)
+        if suffix:
+            self.fields["username"].help_text = (
+                f"What they'll type to sign in is this followed by @{suffix} — no spaces."
+            )
+            self.fields["username"].widget.attrs["aria-describedby"] = "username-suffix"
+
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
         if not username or " " in username:
             raise ValidationError("Usernames can't be blank or contain spaces.")
+        if self.suffix:
+            if "@" in username:
+                raise ValidationError(f"Leave out the @ part — @{self.suffix} is added for you.")
+            username = f"{username.lower()}@{self.suffix}"
+            if len(username) > 150:
+                raise ValidationError("That username is too long.")
         if User.objects.filter(username__iexact=username).exists():
             raise ValidationError("That username is already taken.")
         return username

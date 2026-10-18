@@ -6,6 +6,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from businesses.forms import BusinessLoginForm
+from businesses.middleware import BUSINESS_SESSION_KEY
 from inventory.models import Item
 from .forms import CompanyProfileForm, EmployeeCreateForm, EmployeePasswordResetForm
 from .models import CompanyProfile
@@ -19,6 +21,15 @@ from .utils import generate_temp_password, get_expiring_batches
 
 class AllegderlyLoginView(LoginView):
     template_name = 'registration/login.html'
+    authentication_form = BusinessLoginForm
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        # BusinessMiddleware signs out any session that doesn't name a business,
+        # so the business found from the username must be stored on login.
+        if form.business_obj:
+            self.request.session[BUSINESS_SESSION_KEY] = form.business_obj.slug
+        return response
 
 
 class AllegderlyLogoutView(LogoutView):
@@ -62,7 +73,8 @@ def employee_list(request):
 
 @superuser_required
 def employee_create(request):
-    form = EmployeeCreateForm(request.POST or None)
+    business = getattr(request, "business", None)
+    form = EmployeeCreateForm(request.POST or None, suffix=business.suffix if business else "")
     if request.method == "POST" and form.is_valid():
         password = form.cleaned_data["password"] or generate_temp_password()
         employee = User.objects.create_user(

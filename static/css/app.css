@@ -451,6 +451,9 @@ a.btn.btn-outline-secondary { place-content: center; }
 .temp-password-field { font-family: var(--font-mono); letter-spacing: .02em; }
 .password-field-group { display: flex; gap: 10px; align-items: flex-start; }
 .password-field-group .form-control { flex: 1 1 auto; min-width: 0; }
+.suffix-field-group { display: flex; align-items: stretch; }
+.suffix-field-group .form-control { flex: 1 1 auto; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.suffix-field-tag { display: flex; align-items: center; padding: 0 14px; border: 1px solid var(--bs-border-color, #dee2e6); border-left: 0; border-radius: 0 var(--radius-sm, 10px) var(--radius-sm, 10px) 0; background: #eef3f0; color: #0a6347; font-family: var(--font-mono); font-size: 14px; font-weight: 650; user-select: all; }
 .generate-password-btn { flex: none; white-space: nowrap; }
 .password-reveal { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; padding: 16px 20px; border: 1px solid rgb(23 165 119 / 28%); border-radius: var(--radius); background: #e1f5ec; }
 .password-reveal-text { min-width: 0; }
