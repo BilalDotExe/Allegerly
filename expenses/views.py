@@ -6,7 +6,7 @@ from core.pagination import paginate
 from core.permissions import FULL_ACCESS_GROUPS, group_required
 from reports.forms import DateRangeForm
 from reports.utils import export_csv
-from .forms import BLANK_GROUP, ExpenseLineFormSet, ExpenseReportForm, group_line_forms
+from .forms import CATEGORY_LIST_ID, ExpenseLineFormSet, ExpenseReportForm
 from .models import DEFAULT_CATEGORIES, ExpenseLine, ExpenseReport
 from .services import create_report, update_report
 
@@ -21,18 +21,13 @@ def _unique_sorted(values):
     return sorted(seen.values(), key=str.lower)
 
 
-def _form_context(formset):
-    """Category dropdown choices (starter list + everything typed before), plus
-    the formset's rows grouped into category sections."""
+def _form_context():
+    """Category suggestions: the starter list plus every category typed before."""
     categories = _unique_sorted([
         *DEFAULT_CATEGORIES,
         *ExpenseLine.objects.exclude(category="").values_list("category", flat=True).distinct(),
     ])
-    return {
-        "category_options": categories,
-        "groups": group_line_forms(formset, categories),
-        "blank_group": BLANK_GROUP,
-    }
+    return {"category_options": categories, "category_list_id": CATEGORY_LIST_ID}
 
 
 @group_required(*FULL_ACCESS_GROUPS)
@@ -77,17 +72,18 @@ def expense_create(request):
             messages.success(request, f"Expense report {report.report_number} saved.")
             return redirect("expenses:detail", pk=report.pk)
     return render(request, "expenses/form.html", {
-        "form": form, "formset": formset, "title": "New Expense", **_form_context(formset),
+        "form": form, "formset": formset, "title": "New Expense", **_form_context(),
     })
 
 
 @group_required(*FULL_ACCESS_GROUPS)
 def expense_detail(request, pk):
     report = get_object_or_404(ExpenseReport.objects.select_related("created_by"), pk=pk)
+    lines = list(report.lines.all())
     return render(request, "expenses/detail.html", {
         "expense_report": report,
-        "groups": report.grouped_lines(),
-        "line_count": report.lines.count(),
+        "lines": lines,
+        "category_totals": report.category_totals(),
     })
 
 
@@ -106,5 +102,5 @@ def expense_edit(request, pk):
             return redirect("expenses:detail", pk=pk)
     return render(request, "expenses/form.html", {
         "form": form, "formset": formset, "title": f"Edit {report.report_number}",
-        "expense_report": report, **_form_context(formset),
+        "expense_report": report, **_form_context(),
     })

@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% load money_filters %}
+{% block title %}{{ expense_report.report_number }} | Alledgerly{% endblock %}
+{% block content %}
+<div class="page-heading detail-heading">
+  <div>
+    <h1>{{ expense_report.report_number }}</h1>
+    <p class="page-subtitle">{{ expense_report.name }}</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline-secondary" href="{% url 'expenses:edit' expense_report.pk %}">Edit</a>
+  </div>
+</div>
+
+<div class="summary-strip">
+  <div class="summary-card"><span>Total</span><strong>{{ expense_report.total|usd }}</strong></div>
+  <div class="summary-card"><span>Expense date</span><strong>{{ expense_report.report_date|date:"M j, Y" }}</strong></div>
+  <div class="summary-card"><span>Lines</span><strong>{{ lines|length }}</strong></div>
+  <div class="summary-card"><span>Entered by</span><strong>{{ expense_report.created_by.get_username }}</strong></div>
+</div>
+{% if expense_report.notes %}<p class="form-page-lede">{{ expense_report.notes|linebreaksbr }}</p>{% endif %}
+
+<section class="table-panel" aria-label="Expense lines">
+  <div class="table-heading"><div><h2>Lines</h2><p>Everything paid for on this expense</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col" class="col-line">#</th><th scope="col">Category</th><th scope="col">Description</th><th scope="col">Reference</th><th scope="col" class="text-end">Amount</th></tr></thead>
+    <tbody>
+      {% for line in lines %}<tr><td class="col-line">{{ forloop.counter }}</td><td>{{ line.category|default:"—" }}</td><td class="cell-strong">{{ line.description|default:"—" }}</td><td>{{ line.reference|default:"—" }}</td><td class="text-end cell-balance">{{ line.amount|usd }}</td></tr>
+      {% empty %}<tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span><span><strong>No lines</strong><small>Edit this expense to add some.</small></span></div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+{% if category_totals|length > 1 %}
+<section class="table-panel" aria-label="Totals by category">
+  <div class="table-heading"><div><h2>By category</h2><p>Subtotal for each category on this expense</p></div></div>
+  <div class="table-responsive"><table class="table data-table">
+    <thead><tr><th scope="col">Category</th><th scope="col" class="text-end">Lines</th><th scope="col" class="text-end">Subtotal</th></tr></thead>
+    <tbody>{% for row in category_totals %}<tr><td class="cell-strong">{{ row.category|default:"No category" }}</td><td class="text-end">{{ row.count }}</td><td class="text-end cell-balance">{{ row.total|usd }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endif %}
+<a href="{% url 'expenses:list' %}" class="page-back">← Back to Expenses</a>
+{% endblock %}

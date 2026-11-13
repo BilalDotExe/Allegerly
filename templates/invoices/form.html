@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ title }} | Allegderly{% endblock %}
+{% block title %}{{ title }} | Alledgerly{% endblock %}
 {% block content %}
 <h1 class="form-page-title">{{ title }}</h1>
 <div class="row"><div class="col-xl-9">
@@ -52,7 +52,7 @@
   function sync() {
     var isWholesale = wholesaleIds.indexOf(customerField.value) !== -1;
     taxField.readOnly = isWholesale;
-    taxField.classList.toggle('bg-light', isWholesale);
+    taxField.classList.toggle('bg-body-tertiary', isWholesale);
     taxHint.style.display = isWholesale ? '' : 'none';
     if (isWholesale) taxField.value = '0';
   }

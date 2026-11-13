@@ -6,7 +6,9 @@ from .models import Item, ExpiryWriteOff
 class ItemForm(BootstrapModelForm):
     class Meta:
         model = Item
-        fields = ["sku", "name", "description", "cost_price", "sale_price", "reorder_level", "has_expiry"]
+        fields = ["sku", "name", "description", "cost_price", "sale_price", "reorder_level", "is_active"]
+        labels = {"sku": "SKU", "is_active": "Active"}
+        help_texts = {"is_active": "Untick to stop selling or producing this item. Its history is kept."}
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
         }

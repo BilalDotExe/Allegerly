@@ -13,6 +13,7 @@ from core.charts import (
 )
 from core.money import money
 from damages.models import DamageReport
+from expenses.models import ExpenseLine
 from inventory.models import ExpiryWriteOff, Item
 from invoices.models import (
     _LINE_TOTAL, CreditApplication, CreditNote, Invoice, InvoiceLine, Payment,
@@ -85,6 +86,35 @@ def _same_point_last_month(today):
     first = month_starts(today, 2)[0]
     last_day = calendar.monthrange(first.year, first.month)[1]
     return first, first.replace(day=min(today.day, last_day))
+
+
+# Top categories in order; neighbours in a stack must differ by eye (blue, amber, grey, red).
+# The rest share "Other" in light grey.
+EXPENSE_TONES = ("info", "warn", "neutral", "bad2")
+
+
+def _expense_series(rows):
+    """Chart series for expenses by category: the biggest four, then everything else
+    as "Other". `rows` are (date, category, amount); "rent" and "Rent" are one category."""
+    totals, labels = defaultdict(lambda: ZERO), {}
+    for _, category, amount in rows:
+        key = (category or "").strip().lower()
+        labels.setdefault(key, (category or "").strip() or "Uncategorised")
+        totals[key] += amount
+    ranked = [key for key, _ in sorted(totals.items(), key=lambda kv: kv[1], reverse=True)]
+    # One category left over gets shown by name rather than as an "Other" of one.
+    top = ranked if len(ranked) <= len(EXPENSE_TONES) + 1 else ranked[:len(EXPENSE_TONES)]
+    buckets = {key: [] for key in top}
+    other = []
+    for d, category, amount in rows:
+        key = (category or "").strip().lower()
+        (buckets[key] if key in buckets else other).append((d, amount))
+    tones = EXPENSE_TONES + ("warn2",)   # a fifth category, when it is the only one left over
+    series = [{"key": f"c{i}", "label": labels[key], "tone": tones[i], "values": _by_month(buckets[key])}
+              for i, key in enumerate(top)]
+    if other:
+        series.append({"key": "other", "label": "Other", "tone": "muted", "values": _by_month(other)})
+    return series
 
 
 def _ageing(rows, today):
@@ -160,6 +190,14 @@ def build_dashboard(range_months=6, today=None):
         .values_list("refund_date", "amount")
     )
 
+    # ---- Expenses (by expense date; future-dated ones aren't spent yet) ----
+    expense_rows = list(
+        ExpenseLine.objects.filter(report__report_date__gte=start, report__report_date__lte=today)
+        .values_list("report__report_date", "category", "amount")
+    )
+    expense_pairs = [(d, amount) for d, _, amount in expense_rows]
+    expenses = _by_month(expense_pairs)
+
     # ---- Losses ----
     damage_pairs = [
         (d, qty * cost) for d, qty, cost in DamageReport.objects.filter(date_reported__gte=start)
@@ -193,7 +231,7 @@ def build_dashboard(range_months=6, today=None):
 
     # ---- Stock health ----
     stock_counts = {"ok": 0, "low": 0, "out": 0}
-    for stock, reorder in Item.objects.annotate(
+    for stock, reorder in Item.objects.filter(is_active=True).annotate(
         stock=Coalesce(Sum("movements__quantity"), 0)
     ).values_list("stock", "reorder_level"):
         stock_counts["out" if stock <= 0 else "low" if stock <= reorder else "ok"] += 1
@@ -208,6 +246,9 @@ def build_dashboard(range_months=6, today=None):
     cash_now = money_in.get(this_k, ZERO)
     cash_prev = _sum_between(payment_pairs, prev_first, prev_last)
     cash_series = [money_in.get(month_key(m), ZERO) for m in months]
+    exp_now = expenses.get(this_k, ZERO)
+    exp_prev = _sum_between(expense_pairs, prev_first, prev_last)
+    exp_series = [expenses.get(month_key(m), ZERO) for m in months]
     overdue_count = sum(
         1 for r in rows
         if r["balance"] > 0 and r["due_date"] and r["due_date"] < today
@@ -222,6 +263,10 @@ def build_dashboard(range_months=6, today=None):
          "delta": delta(cash_now, cash_prev), "good_up": True,
          "spark": sparkline(cash_series), "tone": "accent",
          "foot": f"vs {fmt_money(cash_prev)} by this day last month"},
+        {"label": "Expenses this month", "value": fmt_money(exp_now),
+         "delta": delta(exp_now, exp_prev), "good_up": False,
+         "spark": sparkline(exp_series), "tone": "warn2",
+         "foot": f"vs {fmt_money(exp_prev)} by this day last month"},
         {"label": "Outstanding", "value": fmt_money(receivables), "delta": None, "spark": None,
          "tone": "neutral", "foot": f"{open_count} open invoice{'s' if open_count != 1 else ''}"},
         {"label": "Overdue", "value": fmt_money(overdue), "delta": None, "spark": None,
@@ -243,8 +288,10 @@ def build_dashboard(range_months=6, today=None):
         "cash_chart": column_chart(
             months,
             [{"key": "in", "label": "Money in", "tone": "accent", "values": money_in},
-             {"key": "out", "label": "Refunds out", "tone": "muted", "values": money_out}],
+             {"key": "out", "label": "Refunds out", "tone": "muted", "values": money_out},
+             {"key": "exp", "label": "Expenses", "tone": "warn2", "values": expenses}],
             today=today),
+        "expense_chart": column_chart(months, _expense_series(expense_rows), stacked=True, today=today),
         "loss_chart": column_chart(
             months,
             [{"key": "dmg", "label": "Damaged", "tone": "warn", "values": damage},

@@ -13,11 +13,16 @@ from core.numbering import next_sequential_code
 
 _ZERO = Value(Decimal('0.00'), output_field=DecimalField(max_digits=14, decimal_places=2))
 
-# Starter entries in the category dropdown; "Other" on the form lets staff type a new one.
+# Starter suggestions for the category box; anything typed before is suggested too.
 DEFAULT_CATEGORIES = (
     'Rent', 'Utilities', 'Wages', 'Transport', 'Packaging', 'Supplies',
     'Repairs', 'Marketing', 'Fees',
 )
+
+
+def default_name(report_date):
+    """What an expense is called when nobody typed a name, e.g. "Expense Nov 11, 2026"."""
+    return f'Expense {report_date:%b} {report_date.day}, {report_date.year}'
 
 
 class ExpenseReport(models.Model):
@@ -35,6 +40,9 @@ class ExpenseReport(models.Model):
         ordering = ['-report_date', '-id']
 
     def save(self, *args, **kwargs):
+        self.name = (self.name or '').strip()
+        if not self.name and self.report_date:
+            self.name = default_name(self.report_date)
         if self.pk is None and not self.report_number:
             with atomic():
                 self.report_number = next_sequential_code(ExpenseReport.objects, 'report_number', 'EXP-')
@@ -56,22 +64,17 @@ class ExpenseReport(models.Model):
     def total(self):
         return money(self.lines.aggregate(total=Coalesce(Sum('amount'), _ZERO))['total'])
 
-    def grouped_lines(self):
-        """Lines bucketed by category (first-seen order, case-insensitive).
-
-        Each line gets a line_no that restarts at 1 inside its category, matching
-        the numbering on the entry form.
-        """
-        groups = {}
+    def category_totals(self):
+        """Subtotal per category, first-seen order; "rent" and "Rent" count as one."""
+        totals = {}
         for line in self.lines.all():
-            group = groups.setdefault(
+            row = totals.setdefault(
                 (line.category or '').lower(),
-                {'category': line.category, 'lines': [], 'total': Decimal('0.00')},
+                {'category': line.category, 'count': 0, 'total': Decimal('0.00')},
             )
-            group['lines'].append(line)
-            line.line_no = len(group['lines'])
-            group['total'] += line.amount
-        return list(groups.values())
+            row['count'] += 1
+            row['total'] += line.amount
+        return list(totals.values())
 
     def __str__(self):
         return f'{self.report_number} - {self.name}'
@@ -80,7 +83,7 @@ class ExpenseReport(models.Model):
 class ExpenseLine(models.Model):
     report = models.ForeignKey(ExpenseReport, on_delete=models.CASCADE, related_name='lines')
     description = models.CharField(
-        max_length=200, help_text='What the money was spent on. Free text.',
+        max_length=200, blank=True, help_text='What the money was spent on. Free text.',
     )
     category = models.CharField(
         max_length=100, blank=True, help_text='Type any category; earlier ones are suggested.',

@@ -1,0 +1,12 @@
+{# Runs before the stylesheets paint so the page never flashes the wrong theme. #}
+{# Saved choice ("light" / "dark") wins; otherwise follow the device setting. #}
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem('theme'); } catch (e) {}
+    var dark = saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var theme = dark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-bs-theme', theme);
+  })();
+</script>

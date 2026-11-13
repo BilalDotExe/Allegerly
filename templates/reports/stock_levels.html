@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Stock Levels | Allegderly{% endblock %}
+{% block title %}Stock Levels | Alledgerly{% endblock %}
 {% block content %}
-{% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Stock Levels" subtitle="Current stock against reorder levels." %}
+{% include "partials/_page_heading.html" with title="Stock Levels" subtitle="Current stock against reorder levels." %}
 {% url 'reports:stock' as clear_url %}{% include "partials/_date_filter.html" with clear_url=clear_url %}
 
 <div class="summary-strip"><div class="summary-card"><span>Low stock items</span><strong>{{ low_stock_count }}</strong></div></div>
@@ -11,9 +11,9 @@
     <thead><tr><th scope="col">SKU</th><th scope="col">Name</th><th scope="col" class="text-end">Current stock</th><th scope="col" class="text-end">Reorder level</th><th scope="col">Low stock</th></tr></thead>
     <tbody>
       {% for item in items %}
-      <tr{% if item.report_is_low_stock %} class="row-warn"{% endif %}><td class="cell-link">{{ item.sku }}</td><td class="cell-strong">{{ item.name }}</td><td class="text-end cell-balance">{{ item.report_current_stock }}</td><td class="text-end cell-money">{{ item.reorder_level }}</td><td><span class="status-pill {% if item.report_is_low_stock %}status-pill-warn{% else %}status-pill-inactive{% endif %}">{{ item.report_is_low_stock|yesno:"Yes,No" }}</span></td></tr>
+      <tr{% if item.report_is_low_stock %} class="row-warn"{% endif %}><td class="cell-link">{{ item.sku }}</td><td class="cell-strong">{{ item.name }}</td><td class="text-end cell-balance">{{ item.report_current_stock }}</td><td class="text-end cell-money">{{ item.reorder_level }}</td><td>{% if item.report_is_low_stock %}<span class="status-pill status-pill-warn">Yes</span>{% else %}No{% endif %}</td></tr>
       {% empty %}
-      <tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No items found</strong><small>Add items to see stock levels.</small></span></div></td></tr>
+      <tr><td colspan="5"><div class="list-empty-state"><span class="empty-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span><span><strong>No items found</strong><small>Add items to see stock levels.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

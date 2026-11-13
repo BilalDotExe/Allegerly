@@ -1,0 +1,8 @@
+<tr class="line-row">{% for hidden in line_form.hidden_fields %}{{ hidden }}{% endfor %}
+  <td class="line-no" data-label="Line">{{ forloop.counter|default:"" }}</td>
+  <td data-label="Category"><div class="category-combo">{{ line_form.category }}<button type="button" class="category-open" tabindex="-1" aria-hidden="true"><i class="fa-solid fa-chevron-down"></i></button></div>{% if line_form.category.errors %}<div class="text-danger small">{{ line_form.category.errors|join:" " }}</div>{% endif %}</td>
+  <td data-label="Description">{{ line_form.description }}{% if line_form.description.errors %}<div class="text-danger small">{{ line_form.description.errors|join:" " }}</div>{% endif %}</td>
+  <td data-label="Amount" class="col-amount">{{ line_form.amount }}{% if line_form.amount.errors %}<div class="text-danger small">{{ line_form.amount.errors|join:" " }}</div>{% endif %}{% if line_form.non_field_errors %}<div class="text-danger small">{{ line_form.non_field_errors|join:" " }}</div>{% endif %}</td>
+  <td data-label="Reference">{{ line_form.reference }}{% if line_form.reference.errors %}<div class="text-danger small">{{ line_form.reference.errors|join:" " }}</div>{% endif %}</td>
+  <td data-label="Remove" class="line-del-cell">{% if line_form.DELETE %}<div class="d-none">{{ line_form.DELETE }}</div>{% endif %}<button type="button" class="line-del-btn" aria-label="Remove line" title="Remove line"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button></td>
+</tr>

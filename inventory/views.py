@@ -18,7 +18,7 @@ def item_list(request):
     if request.GET.get("export") == "csv":
         return export_csv(
             "items.csv",
-            ["SKU", "Name", "Cost Price", "Sale Price", "Stock", "Reorder Level"],
+            ["SKU", "Name", "Cost Price", "Sale Price", "Stock", "Reorder Level", "Status"],
             [[
                 item.sku,
                 item.name,
@@ -26,6 +26,7 @@ def item_list(request):
                 item.sale_price,
                 item.current_stock(),
                 item.reorder_level,
+                "Active" if item.is_active else "Inactive",
             ] for item in items],
         )
     page_obj, pagination_query = paginate(request, items)

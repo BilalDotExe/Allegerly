@@ -1,8 +1,8 @@
 {% extends "base.html" %}{% load money_filters %}
-{% block title %}Invoices | Allegderly{% endblock %}
+{% block title %}Invoices | Alledgerly{% endblock %}
 {% block content %}
 <div class="page-heading list-page-heading">
-  <div><div class="eyebrow">BILLING</div><h1>Invoices</h1><p class="page-subtitle">Review customer balances and keep billing on track.</p></div>
+  <div><h1>Invoices</h1><p class="page-subtitle">Review customer balances and keep billing on track.</p></div>
   <div class="page-actions">
     <a class="btn btn-outline-primary export-button" href="?{{ export_query }}"><span aria-hidden="true">↓</span> Export CSV</a>
     <a class="btn btn-primary app-primary-button" href="{% url 'invoices:create' %}"><span aria-hidden="true">＋</span> Add Invoice</a>
@@ -48,13 +48,13 @@
                 <div><dt>Paid</dt><dd>{{ invoice.total_paid|usd }}</dd></div>
                 <div class="is-total"><dt>Balance due</dt><dd>{{ invoice.balance_due|usd }}</dd></div>
               </dl>
-              <a class="btn btn-primary btn-sm app-primary-button" href="{% url 'invoices:detail' invoice.pk %}">Open full invoice <span aria-hidden="true">→</span></a>
+              <a class="btn btn-primary btn-sm app-primary-button" href="{% url 'invoices:detail' invoice.pk %}">Open invoice <span aria-hidden="true">→</span></a>
             </div>
           </div>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No invoices found</strong><small>Try a different date range or create a new invoice.</small></span></div></td></tr>
+      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span><span><strong>No invoices found</strong><small>Try a different date range or create a new invoice.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

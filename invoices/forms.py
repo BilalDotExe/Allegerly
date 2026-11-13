@@ -29,6 +29,11 @@ class InvoiceLineForm(TableRowFormMixin, BootstrapModelForm):
         model = InvoiceLine
         fields = ["item", "quantity", "unit_price"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only active items can be sold; a saved line keeps its item even if it was deactivated since.
+        self.fields["item"].queryset = Item.objects.active_or(self.instance.item_id).order_by("name")
+
 
 InvoiceLineFormSet = forms.inlineformset_factory(
     Invoice,

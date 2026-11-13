@@ -6,14 +6,26 @@ from django.db import models
 from django.db.models import Sum
 
 
+class ItemQuerySet(models.QuerySet):
+    def active_or(self, item_id=None):
+        """Active items, plus item_id (the one already saved on a record) even if it is inactive."""
+        if item_id:
+            return self.filter(models.Q(is_active=True) | models.Q(pk=item_id))
+        return self.filter(is_active=True)
+
+
 class Item(models.Model):
+    objects = ItemQuerySet.as_manager()
+
     sku = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2)
     reorder_level = models.PositiveIntegerField(default=10)
-    has_expiry = models.BooleanField(default=False)
+    # Expiry is tracked per production batch (ProductionBatch.expiry_date), not on the item.
+    # Inactive items stay on old records but can't be picked for new invoices or production.
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def current_stock(self):
@@ -26,7 +38,7 @@ class Item(models.Model):
     def delete(self, *args, **kwargs):
         if self.movements.exists() or self.invoice_lines.exists():
             raise ValidationError(
-                'Items with history cannot be deleted. Keep the row and stop selling it instead.'
+                'Items with history cannot be deleted. Mark the item inactive instead.'
             )
         super().delete(*args, **kwargs)
 

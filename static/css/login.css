@@ -1,16 +1,22 @@
 @font-face { font-family: "Geist"; src: url("../vendor/fonts/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+/* Outfit (SIL OFL, static/vendor/fonts/OUTFIT-OFL.txt): display face for the wordmark and headings. */
+@font-face { font-family: "Outfit"; src: url("../vendor/fonts/outfit-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+/* Groote: the app name on the sign-in screens. One weight only, so never bolded. */
+@font-face { font-family: "Groote"; src: url("../vendor/fonts/groote-regular.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: swap; ascent-override: 110%; descent-override: 32%; line-gap-override: 0%; }
 
 :root {
   --ink: #12201b;
   --ink-2: #3a4944;
-  --muted: #6b7a74;
-  --faint: #8d9a94;
+  /* Was #6b7a74 / #8d9a94: the faint footnote measured 2.7:1 on the panel. Both now pass AA. */
+  --muted: #5a6963;
+  --faint: #5f6e68;
   --accent: #147d67;
   --accent-strong: #0e5f4e;
   --accent-deep: #08352c;
   --line: rgb(18 44 35 / 10%);
   --ease: cubic-bezier(.32, .72, 0, 1);
   --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Outfit", "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -21,7 +27,7 @@ svg { display: block; flex: none; }
 .auth-shell { min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
 
 /* ---------- Brand side ---------- */
-.auth-brand { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; padding: 48px 56px; color: #e9f5f0; background: radial-gradient(120% 90% at 0% 0%, #0f5a4a 0%, transparent 60%), linear-gradient(160deg, #0b4538 0%, var(--accent-deep) 55%, #052620 100%); }
+.auth-brand { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 56px; color: #e9f5f0; background: radial-gradient(120% 90% at 0% 0%, #0f5a4a 0%, transparent 60%), linear-gradient(160deg, #0b4538 0%, var(--accent-deep) 55%, #052620 100%); }
 .auth-brand::after { content: ""; position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(rgb(255 255 255 / 3.5%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 3.5%) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(70% 60% at 30% 35%, #000, transparent 85%); -webkit-mask-image: radial-gradient(70% 60% at 30% 35%, #000, transparent 85%); }
 /* will-change promotes the orb to its own layer so the 70px blur is rasterised
    once instead of on every frame — it is the heaviest paint on this page. */
@@ -30,26 +36,23 @@ svg { display: block; flex: none; }
 .orb-b { width: 320px; height: 320px; bottom: -110px; left: -60px; background: #3f8f7d; opacity: .4; animation-duration: 24s; animation-direction: alternate-reverse; }
 @keyframes drift { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(-36px, 28px, 0) scale(1.08); } }
 
-.brand-top, .mobile-brand { display: flex; align-items: center; gap: 12px; }
-.mark { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 13px; background: linear-gradient(150deg, #22a88b 0%, var(--accent-strong) 75%); box-shadow: inset 0 1px 1px rgb(255 255 255 / 38%), 0 10px 22px -10px rgb(0 0 0 / 55%); color: #fff; font-size: 18px; font-weight: 700; letter-spacing: -.04em; }
-.wordmark { font-size: 17px; font-weight: 650; letter-spacing: -.03em; }
+.mobile-brand { display: flex; align-items: center; gap: 12px; }
+.mark { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; background: linear-gradient(150deg, #22a88b 0%, var(--accent-strong) 75%); box-shadow: inset 0 1px 1px rgb(255 255 255 / 38%), 0 10px 22px -10px rgb(0 0 0 / 55%); color: #fff; font-family: var(--font-display); font-size: 21px; font-weight: 700; }
+.wordmark { font-family: "Groote", var(--font-display); font-size: 27px; font-weight: 400; letter-spacing: 0; }
 
-.brand-copy { max-width: 460px; }
-.chip { display: inline-block; padding: 6px 12px; border: 1px solid rgb(255 255 255 / 16%); border-radius: 999px; background: rgb(255 255 255 / 6%); color: #bfe3d6; font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
-.brand-copy h2 { margin: 22px 0 16px; color: #fff; font-size: clamp(30px, 3.2vw, 44px); font-weight: 600; letter-spacing: -.045em; line-height: 1.08; }
-.brand-copy p { margin: 0; color: #a9cfc2; font-size: 15px; line-height: 1.65; }
-
-.brand-points { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.brand-points li { max-width: 420px; display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 1px solid rgb(255 255 255 / 10%); border-radius: 16px; background: rgb(255 255 255 / 5%); box-shadow: inset 0 1px 1px rgb(255 255 255 / 8%); color: #d4ebe2; font-size: 13px; font-weight: 500; }
-.brand-points svg { width: 22px; height: 22px; color: #7fd3b9; }
+/* Brand panel: just the name, large and centred. */
+.brand-hero { display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center; }
+.mark-lg { width: 84px; height: 84px; border-radius: 26px; font-size: 40px; box-shadow: inset 0 1px 1px rgb(255 255 255 / 38%), 0 22px 44px -18px rgb(0 0 0 / 60%); }
+.wordmark-lg { color: #fff; font-size: clamp(48px, 5.6vw, 80px); line-height: 1.05; }
 
 /* ---------- Form side ---------- */
 .auth-panel { display: grid; place-items: center; padding: 48px 28px; background: radial-gradient(700px 420px at 100% 0%, rgb(20 125 103 / 9%), transparent 70%), #f4f7f5; }
 .auth-wrap { width: 100%; max-width: 420px; }
 .mobile-brand { display: none; margin-bottom: 36px; color: var(--ink); }
 
-.eyebrow { display: inline-block; padding: 5px 11px; border-radius: 999px; background: #e3f2ec; box-shadow: inset 0 0 0 1px rgb(20 125 103 / 14%); color: var(--accent-strong); font-size: 10px; font-weight: 650; letter-spacing: .2em; text-transform: uppercase; }
-.auth-wrap h1 { margin: 18px 0 8px; font-size: 34px; font-weight: 650; letter-spacing: -.05em; line-height: 1.1; }
+
+.auth-wrap h1 { margin: 0 0 10px; font-family: var(--font-display); font-size: 36px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+.auth-wrap h1 + .bezel { margin-top: 24px; }
 .lede { margin: 0 0 30px; color: var(--muted); font-size: 15px; }
 
 /* Double-bezel: outer tray + inner core with concentric radii */
@@ -103,16 +106,13 @@ svg { display: block; flex: none; }
 
 /* ---------- Entrance (transform + opacity) ---------- */
 @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-.auth-wrap > *, .brand-top, .brand-copy, .brand-points li { animation: rise .9s var(--ease) both; }
+.auth-wrap > *, .brand-hero { animation: rise .9s var(--ease) both; }
 .auth-wrap > :nth-child(2) { animation-delay: .06s; }
 .auth-wrap > :nth-child(3) { animation-delay: .12s; }
 .auth-wrap > :nth-child(4) { animation-delay: .18s; }
 .auth-wrap > :nth-child(5) { animation-delay: .26s; }
 .auth-wrap > :nth-child(6) { animation-delay: .34s; }
-.brand-copy { animation-delay: .1s; }
-.brand-points li:nth-child(1) { animation-delay: .22s; }
-.brand-points li:nth-child(2) { animation-delay: .3s; }
-.brand-points li:nth-child(3) { animation-delay: .38s; }
+
 
 /* ---------- Responsive ---------- */
 @media (max-width: 960px) {
@@ -125,6 +125,26 @@ svg { display: block; flex: none; }
   .bezel-core { padding: 24px 18px 20px; }
   .auth-wrap h1 { font-size: 30px; }
 }
+/* ---------- Dark theme (set on <html> by partials/_theme_init.html) ----------
+   The brand panel is already dark green; only the form side changes.
+   Checked: text 14:1, secondary 7:1, footnote 6:1, placeholder 5:1, button label 4.9:1. */
+:root[data-theme="dark"] { color-scheme: dark; --ink: #e6eeeb; --ink-2: #c4d0cb; --muted: #9cada6; --faint: #8c9d96; --accent: #4cc9a6; --accent-strong: #74dcbd; --line: rgb(220 240 232 / 10%); }
+:root[data-theme="dark"] body { background: #0e1513; }
+:root[data-theme="dark"] .auth-panel { background: radial-gradient(700px 420px at 100% 0%, rgb(76 201 166 / 8%), transparent 70%), #0e1513; }
+:root[data-theme="dark"] .mark { background: linear-gradient(150deg, #168a71 0%, #0f6855 75%); color: #f4f8f6; }
+
+:root[data-theme="dark"] .bezel { background: rgb(220 240 232 / 4%); box-shadow: inset 0 0 0 1px rgb(220 240 232 / 8%), 0 30px 60px -34px rgb(0 0 0 / 70%); }
+:root[data-theme="dark"] .bezel-core { background: #151e1b; box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%), 0 1px 2px rgb(0 0 0 / 30%); }
+:root[data-theme="dark"] .input { background: #1a2421; box-shadow: inset 0 0 0 1px rgb(220 240 232 / 14%); }
+:root[data-theme="dark"] .input:focus-within, :root[data-theme="dark"] .input:has(input:-webkit-autofill) { background: #1a2421; box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 5px rgb(76 201 166 / 14%); }
+:root[data-theme="dark"] .input.has-error { box-shadow: inset 0 0 0 1.5px #ec6f66; }
+:root[data-theme="dark"] .input input::placeholder { color: #84958e; }
+:root[data-theme="dark"] .reveal:hover, :root[data-theme="dark"] .reveal:focus-visible { background: rgb(220 240 232 / 7%); }
+:root[data-theme="dark"] .field-error { color: #ffa79c; }
+:root[data-theme="dark"] .form-error { background: rgb(240 100 85 / 15%); box-shadow: inset 0 0 0 1px rgb(240 100 85 / 32%); color: #ffc2ba; }
+:root[data-theme="dark"] .submit { background: linear-gradient(180deg, #127a64 0%, #0f6855 100%); box-shadow: inset 0 1px 1px rgb(255 255 255 / 18%), 0 14px 26px -12px rgb(0 0 0 / 70%); color: #f4f8f6; }
+:root[data-theme="dark"] .signed-out-action:hover { color: #f4f8f6; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   /* Stop promoting a layer we are no longer animating. */

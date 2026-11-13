@@ -28,8 +28,8 @@ class AllegderlyAdminSite(AdminSite):
     checks group permission — is_staff is not enough.
     """
 
-    site_header = "Allegderly administration"
-    site_title = "Allegderly admin"
+    site_header = "Alledgerly administration"
+    site_title = "Alledgerly admin"
     index_title = "Site administration"
     login_form = AllegderlyAdminAuthenticationForm
 

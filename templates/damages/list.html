@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% load money_filters %}
-{% block title %}Damage Reports | Allegderly{% endblock %}
+{% block title %}Damage Reports | Alledgerly{% endblock %}
 {% block content %}
-{% url 'damages:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="OPERATIONS" title="Damage Reports" subtitle="Record and review damaged stock." add_url=add_url add_label="Add Damage Report" %}
+{% url 'damages:create' as add_url %}{% include "partials/_page_heading.html" with title="Damage Reports" subtitle="Record and review damaged stock." add_url=add_url add_label="Add Damage Report" %}
 {% url 'damages:list' as clear_url %}{% include "partials/_date_filter.html" with clear_url=clear_url filter_title="Find damage reports" %}
 
 <section class="table-panel" aria-label="All damage reports">
@@ -12,7 +12,7 @@
       {% for report in page_obj %}
       <tr><td class="cell-date">{{ report.date_reported|date:"M j, Y" }}</td><td class="cell-strong">{{ report.item.sku }} — {{ report.item.name }}</td><td class="text-end cell-money">{{ report.quantity }}</td><td>{{ report.invoice_line|default:"—" }}</td><td class="text-end cell-balance">{{ report.loss_value|usd }}</td><td class="cell-note">{{ report.note|default:"—" }}</td><td>{{ report.created_by }}</td></tr>
       {% empty %}
-      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No damage reports found</strong><small>Try a different date range or add a report.</small></span></div></td></tr>
+      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span><span><strong>No damage reports found</strong><small>Try a different date range or add a report.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

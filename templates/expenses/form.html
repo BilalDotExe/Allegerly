@@ -1,0 +1,57 @@
+{% extends "base.html" %}{% load static %}
+{% block title %}{{ title }} | Alledgerly{% endblock %}
+{% block content %}
+<h1 class="form-page-title">{{ title }}</h1>
+<p class="form-page-lede">Only the date is needed. Add a line for each thing you paid for.</p>
+<form method="post" class="app-form expense-form">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+  <div class="card mb-3"><div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-7">{% include "partials/_form_field.html" with field=form.name %}</div>
+      <div class="col-md-5">{% include "partials/_form_field.html" with field=form.report_date %}</div>
+      <div class="col-12">{% include "partials/_form_field.html" with field=form.notes %}</div>
+    </div>
+  </div></div>
+
+  <div class="card mb-3"><div class="card-body">
+    <h2 class="card-section-title">Lines</h2>
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors|join:" " }}</div>{% endif %}
+    <div class="table-responsive line-items-wrap"><table class="table line-items" id="expense-lines">
+      <thead><tr>
+        <th scope="col" class="line-no-head">#</th><th scope="col" class="col-category">Category</th><th scope="col">Description</th>
+        <th scope="col" class="col-amount">Amount</th><th scope="col" class="col-reference">Reference</th>
+        <th scope="col" class="line-del-head"><span class="visually-hidden">Remove</span></th>
+      </tr></thead>
+      <tbody>{% for line_form in formset.forms %}{% include "expenses/_line_row.html" %}{% endfor %}</tbody>
+    </table></div>
+    <div class="expense-lines-foot">
+      <button type="button" class="btn btn-outline-primary" id="add-line"><i class="fa-solid fa-plus" aria-hidden="true"></i>Add line</button>
+      <div class="expense-total">Total<strong id="expense-total" aria-live="polite">$0.00</strong></div>
+    </div>
+  </div></div>
+
+  <div><button class="btn btn-primary" type="submit">Save</button>
+  <a class="btn btn-outline-secondary ms-2" href="{% if expense_report %}{% url 'expenses:detail' expense_report.pk %}{% else %}{% url 'expenses:list' %}{% endif %}">Cancel</a></div>
+
+  <datalist id="{{ category_list_id }}">{% for option in category_options %}<option value="{{ option }}">{% endfor %}</datalist>
+  <template id="expense-line-template">{% include "expenses/_line_row.html" with line_form=formset.empty_form %}</template>
+</form>
+
+<div class="modal fade" id="remove-line-dialog" tabindex="-1" aria-labelledby="remove-line-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content confirm-dialog">
+    <div class="modal-body">
+      <span class="confirm-dialog-mark" aria-hidden="true"><i class="fa-solid fa-trash-can"></i></span>
+      <h2 class="confirm-dialog-title" id="remove-line-title">Remove line <span data-line-no></span>?</h2>
+      <p class="confirm-dialog-text" data-line-summary></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep it</button>
+      <button type="button" class="btn btn-danger" id="confirm-remove-line">Remove</button>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/expense-form.js' %}"></script>{% endblock %}

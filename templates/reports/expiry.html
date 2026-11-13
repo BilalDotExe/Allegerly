@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% load money_filters %}
-{% block title %}Expiry Report | Allegderly{% endblock %}
+{% block title %}Expiry Report | Alledgerly{% endblock %}
 {% block content %}
-{% include "partials/_page_heading.html" with eyebrow="REPORTS" title="Expiry Report" subtitle="Expiry write-offs for the selected dates." %}
+{% include "partials/_page_heading.html" with title="Expiry Report" subtitle="Expiry write-offs for the selected dates." %}
 {% url 'reports:expiry' as clear_url %}{% include "partials/_date_filter.html" with clear_url=clear_url %}
 
 <div class="summary-strip"><div class="summary-card"><span>Total quantity written off</span><strong>{{ total_qty }}</strong></div><div class="summary-card"><span>Total loss value</span><strong>{{ total_loss_value|usd }}</strong></div></div>
@@ -13,7 +13,7 @@
       {% for record in records %}
       <tr><td class="cell-date">{{ record.date_noticed|date:"M j, Y" }}</td><td class="cell-link">{{ record.item.sku }}</td><td class="cell-strong">{{ record.item.name }}</td><td class="text-end cell-money">{{ record.quantity }}</td><td class="text-end cell-balance">{{ record.loss_value|usd }}</td><td class="cell-note">{{ record.note|default:"—" }}</td><td>{{ record.created_by }}</td></tr>
       {% empty %}
-      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No expiry write-offs found</strong><small>Try a different date range.</small></span></div></td></tr>
+      <tr><td colspan="7"><div class="list-empty-state"><span class="empty-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span><span><strong>No expiry write-offs found</strong><small>Try a different date range.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

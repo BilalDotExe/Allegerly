@@ -29,6 +29,8 @@ dist/
 .pytest_cache/
 .coverage
 htmlcov/
+passwords
+.taste-skill
 
 # Editor and OS files
 .vscode/

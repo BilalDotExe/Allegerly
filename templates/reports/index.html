@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Reports | Allegderly{% endblock %}
+{% block title %}Reports | Alledgerly{% endblock %}
 {% block content %}
-{% include "partials/_page_heading.html" with eyebrow="INSIGHTS" title="Reports" subtitle="Filter any report by date, then export it as CSV." %}
+{% include "partials/_page_heading.html" with title="Reports" subtitle="Filter any report by date, then export it as CSV." %}
 <div class="row g-3 report-cards">
   {% for name, description, url_name in reports %}
   <div class="col-md-6 col-xl-4">

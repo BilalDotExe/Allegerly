@@ -177,3 +177,16 @@ class BusinessIsolationTests(TestCase):
             User.objects.create_superuser("extra", "", PASSWORD)
             with self.assertRaises(ValidationError):
                 _adopt_users(Business(slug="x", suffix="as", owner_username="acme_boss"))
+
+    # --- company name ------------------------------------------------------
+
+    def test_company_settings_name_updates_the_top_bar(self):
+        self._login("acme_boss")
+        self.client.post(reverse("account_settings"), {"name": "Acme Soap Works", "invoice_footer": "Thanks"})
+        self.assertEqual(Business.objects.get(slug="acme").name, "Acme Soap Works")
+        self.assertContains(self.client.get(reverse("dashboard")), '<span class="topbar-business" title="Current business">Acme Soap Works</span>', html=False)
+
+    def test_untouched_company_settings_start_from_the_business_name(self):
+        self._login("bolt_boss")
+        response = self.client.get(reverse("account_settings"))
+        self.assertEqual(response.context["form"]["name"].value(), "Bolt Candles")

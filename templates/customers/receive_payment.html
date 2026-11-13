@@ -1,9 +1,8 @@
 {% extends "base.html" %}{% load money_filters static %}
-{% block title %}Receive payment | Allegderly{% endblock %}
+{% block title %}Receive payment | Alledgerly{% endblock %}
 {% block content %}
 <div class="page-heading detail-heading">
   <div>
-    <div class="eyebrow">PEOPLE</div>
     <h1>Receive payment</h1>
     <p class="page-subtitle">From <a href="{% url 'customers:detail' customer.pk %}">{{ customer.name }}</a>. Type the amount received to pay the oldest invoices first, or fill in the invoices yourself.</p>
   </div>
@@ -60,7 +59,7 @@
   <a class="btn btn-outline-secondary ms-2" href="{% url 'customers:detail' customer.pk %}">Cancel</a>
 </form>
 {% else %}
-<div class="list-empty-state"><span class="empty-mark">✓</span><span><strong>Nothing owing</strong><small>{{ customer.name }} has no open invoices.</small></span></div>
+<div class="list-empty-state"><span class="empty-mark" aria-hidden="true"><i class="fa-solid fa-check"></i></span><span><strong>Nothing owing</strong><small>{{ customer.name }} has no open invoices.</small></span></div>
 <a class="btn btn-outline-secondary" href="{% url 'customers:detail' customer.pk %}">Back to customer</a>
 {% endif %}
 {% endblock %}

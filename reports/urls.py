@@ -13,4 +13,5 @@ urlpatterns = [
     path("returns/", views.returns_report, name="returns"),
     path("expiry/", views.expiry_report, name="expiry"),
     path("production/", views.production_report, name="production"),
+    path("expenses/", views.expenses_report, name="expenses"),
 ]

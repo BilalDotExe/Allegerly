@@ -7,8 +7,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f7f5">
-  <title>Signed out | Allegderly</title>
+  <title>Signed out | Alledgerly</title>
+  {% include "partials/_theme_init.html" %}
   <link rel="preload" href="{% static 'vendor/fonts/geist-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'vendor/fonts/outfit-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'vendor/fonts/groote-regular.otf' %}" as="font" type="font/otf" crossorigin>
   <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
@@ -17,12 +20,11 @@
       <div class="auth-wrap">
         <div class="mobile-brand">
           <span class="mark">A</span>
-          <span class="wordmark">Allegderly</span>
+          <span class="wordmark">Alledgerly</span>
         </div>
 
-        <span class="eyebrow">Session ended</span>
         <h1>Signed out</h1>
-        <p class="lede">You have been signed out of Allegderly. Your work is saved.</p>
+        <p class="lede">You have been signed out of Alledgerly. Your work is saved.</p>
 
         <a class="submit signed-out-action" href="{% url 'login' %}">
           <span>Sign In Again</span>

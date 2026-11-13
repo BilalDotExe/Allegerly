@@ -6,8 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b4538" media="(max-width: 960px)">
   <meta name="theme-color" content="#f4f7f5">
-  <title>Sign in | Allegderly</title>
+  <title>Sign in | Alledgerly</title>
+  {% include "partials/_theme_init.html" %}
   <link rel="preload" href="{% static 'vendor/fonts/geist-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'vendor/fonts/outfit-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'vendor/fonts/groote-regular.otf' %}" as="font" type="font/otf" crossorigin>
   <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
@@ -17,29 +20,10 @@
     <section class="auth-brand" aria-hidden="true">
       <div class="orb orb-a"></div>
       <div class="orb orb-b"></div>
-      <div class="brand-top">
-        <span class="mark">A</span>
-        <span class="wordmark">Allegderly</span>
+      <div class="brand-hero">
+        <span class="mark mark-lg">A</span>
+        <span class="wordmark wordmark-lg">Alledgerly</span>
       </div>
-      <div class="brand-copy">
-        <span class="chip">Operations workspace</span>
-        <h2>Every invoice, batch and return, in one calm place.</h2>
-        <p>Stock that always adds up. Invoices that stay honest. A clear record of what was sold, returned and written off.</p>
-      </div>
-      <ul class="brand-points">
-        <li>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg>
-          <span>Live stock from every movement</span>
-        </li>
-        <li>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>
-          <span>Invoices locked once issued</span>
-        </li>
-        <li>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
-          <span>Returns, damages and expiry tracked</span>
-        </li>
-      </ul>
     </section>
 
     <!-- Form side -->
@@ -47,12 +31,10 @@
       <div class="auth-wrap">
         <div class="mobile-brand">
           <span class="mark">A</span>
-          <span class="wordmark">Allegderly</span>
+          <span class="wordmark">Alledgerly</span>
         </div>
 
-        <span class="eyebrow">Staff access</span>
-        <h1>Welcome back</h1>
-        <p class="lede">Sign in to continue to your workspace.</p>
+        <h1>Sign in</h1>
 
         <div class="bezel">
           <div class="bezel-core">

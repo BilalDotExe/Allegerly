@@ -237,7 +237,7 @@ class DashboardFixTests(TestCase):
                                 sale_price=Decimal('2'), reorder_level=5)
             self._issued_invoice(today - timedelta(days=40 - i), due_date=today - timedelta(days=30 - i))
         self.client.get(reverse('dashboard'))  # warm session/business lookups
-        with self.assertNumQueries(22):
+        with self.assertNumQueries(23):  # 22 + one for expense lines (KPI, cash flow, expense chart)
             response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.context['outstanding_total'], 8)
         self.assertEqual(response.context['low_stock_total'], 9)

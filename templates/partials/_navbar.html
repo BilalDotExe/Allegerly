@@ -1,31 +1,52 @@
-<header class="topbar">
-  <button class="mobile-menu btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNavigation" aria-controls="mobileNavigation" aria-label="Open navigation"><span></span><span></span><span></span></button>
-  <div class="topbar-context"><span class="context-label">WORKSPACE</span><span class="context-separator">/</span><span>{% if request.resolver_match.url_name == 'dashboard' %}Overview{% elif request.resolver_match.namespace %}{{ request.resolver_match.namespace|title }}{% else %}Workspace{% endif %}</span></div>
+<header class="topbar{% if request.business %} has-business{% endif %}">
+  <button class="mobile-menu btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNavigation" aria-controls="mobileNavigation" aria-label="Open navigation"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+  <a class="topbar-brand" href="{% url 'dashboard' %}">
+    <span class="brand-mark" aria-hidden="true">A</span>
+    <span class="brand-wordmark">Alledgerly</span>
+  </a>
+  {% if request.business %}<span class="topbar-business" title="Current business">{{ request.business.name }}</span>{% endif %}
+  <div class="topbar-right">
+  <button type="button" class="theme-toggle" role="switch" aria-checked="false" aria-label="Dark mode" title="Dark mode" data-theme-toggle>
+    <span class="theme-toggle-knob" aria-hidden="true"><i class="fa-solid fa-sun"></i><i class="fa-solid fa-moon"></i></span>
+  </button>
   {% if user.is_authenticated %}
   <div class="topbar-account dropdown">
-    <button class="account-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <button class="account-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
       <span class="account-avatar">{{ user.username|first|upper }}</span>
       <span class="account-name">{{ user.username }}</span>
-      <svg class="account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      <i class="account-chevron fa-solid fa-chevron-down" aria-hidden="true"></i>
     </button>
     <div class="dropdown-menu dropdown-menu-end account-menu">
+      <div class="account-menu-head">
+        <strong>{{ user.get_full_name|default:user.username }}</strong>
+        {% if user.get_full_name %}<small>{{ user.username }}</small>{% endif %}
+        {% if request.business %}<small>{{ request.business.name }}</small>{% endif %}
+      </div>
+      <div class="dropdown-divider"></div>
+      <div class="theme-switch" role="group" aria-label="Theme">
+        <button type="button" class="theme-option" data-theme-choice="system" aria-pressed="true"><i class="fa-solid fa-desktop" aria-hidden="true"></i>System</button>
+        <button type="button" class="theme-option" data-theme-choice="light" aria-pressed="false"><i class="fa-solid fa-sun" aria-hidden="true"></i>Light</button>
+        <button type="button" class="theme-option" data-theme-choice="dark" aria-pressed="false"><i class="fa-solid fa-moon" aria-hidden="true"></i>Dark</button>
+      </div>
+      <div class="dropdown-divider"></div>
       {% if can_edit_company %}
       <a class="dropdown-item account-menu-item {% if request.resolver_match.url_name == 'account_settings' %}active{% endif %}" href="{% url 'account_settings' %}">
-        <span class="account-menu-glyph" aria-hidden="true">⚙</span>Company settings
+        <i class="account-menu-glyph fa-solid fa-gear" aria-hidden="true"></i>Company settings
       </a>
       {% endif %}
       {% if user.is_superuser %}
       <a class="dropdown-item account-menu-item {% if request.resolver_match.url_name == 'employee_list' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_reset_password' %}active{% endif %}" href="{% url 'employee_list' %}">
-        <span class="account-menu-glyph" aria-hidden="true">▣</span>Employee accounts
+        <i class="account-menu-glyph fa-solid fa-id-badge" aria-hidden="true"></i>Employee accounts
       </a>
       {% endif %}
       {% if can_edit_company or user.is_superuser %}<div class="dropdown-divider"></div>{% endif %}
       <form method="post" action="{% url 'logout' %}" class="account-menu-logout-form">{% csrf_token %}
         <button class="dropdown-item account-menu-item logout-item" type="submit">
-          <span class="account-menu-glyph" aria-hidden="true">⏻</span>Log out
+          <i class="account-menu-glyph fa-solid fa-right-from-bracket" aria-hidden="true"></i>Log out
         </button>
       </form>
     </div>
   </div>
   {% endif %}
+  </div>
 </header>

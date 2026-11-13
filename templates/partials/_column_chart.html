@@ -22,5 +22,5 @@
 </div>
 {% if chart.legend|length > 1 %}<div class="chart-legend">{% for l in chart.legend %}<span><i class="dot tone-{{ l.tone }}"></i>{{ l.label }}</span>{% endfor %}</div>{% endif %}
 {% else %}
-<div class="empty-state chart-empty"><span class="empty-mark">–</span><span><strong>{{ empty_title|default:"Nothing to chart yet" }}</strong><small>{{ empty_text|default:"Data will appear here as it is recorded." }}</small></span></div>
+<div class="empty-state chart-empty"><span class="empty-mark" aria-hidden="true"><i class="fa-solid fa-minus"></i></span><span><strong>{{ empty_title|default:"Nothing to chart yet" }}</strong><small>{{ empty_text|default:"Data will appear here as it is recorded." }}</small></span></div>
 {% endif %}

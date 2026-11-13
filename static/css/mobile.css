@@ -19,11 +19,9 @@
 
   .page-heading h1 { font-size: 23px; }
   .page-subtitle, .dashboard-heading .page-subtitle { font-size: 13.5px; }
-  .eyebrow { font-size: 10.5px; }
   .page-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
   .page-actions > .btn:only-child { grid-column: 1 / -1; }
   .app-primary-button, .export-button, main .btn { min-height: 38px; padding-top: 0; padding-bottom: 0; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
-  .dashboard-heading > .btn { width: 100%; justify-content: center; }
   .data-table .btn-sm { min-height: 34px; padding: 0 16px; font-size: 12.5px; }
 
   /* forms & filters */
@@ -39,18 +37,20 @@
   .panel-heading h2, .table-heading h2, .filter-heading h2 { font-size: 14.5px; }
   .panel-heading p, .table-heading p, .filter-heading p { font-size: 12px; }
   .panel-link { padding: 7px 12px; font-size: 12px; }
-  .section-title { margin: 22px 0 10px; font-size: 11px; }
+  .section-title { margin: 22px 0 10px; font-size: 12px; }
 
   /* KPI cards */
   .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .kpi-strip .kpi-card:last-child { grid-column: 1 / -1; }
+  .kpi-strip.kpi-strip-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi-strip-6 .kpi-card:last-child { grid-column: auto; }
   .kpi-card { padding: 12px 13px; }
-  .kpi-label { font-size: 12px; } .kpi-value { font-size: 18px; } .kpi-foot { font-size: 11.5px; }
+  .kpi-label { font-size: 12px; } .kpi-value { font-size: 18px; } .kpi-foot { font-size: 12px; }
 
   /* charts */
   .chart-body { padding: 14px 12px 16px; }
   .col-chart { height: 180px; grid-template-columns: 38px minmax(0, 1fr); }
-  .cc-axis span, .cc-label { font-size: 11px; }
+  .cc-axis span, .cc-label { font-size: 12px; }
   .cc-label small { display: none; }
   .chart-legend { font-size: 12px; }
   .rank-row { font-size: 12.5px; }
@@ -64,7 +64,7 @@
   .data-table, .data-table tbody, .app-table, .app-table tbody { display: block; width: 100%; }
   .data-table thead, .app-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .data-table > tbody { padding: 10px; display: grid; gap: 10px; }
-  .data-table > tbody > tr { display: block; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: 0 1px 2px rgb(18 44 35 / 4%); overflow: hidden; }
+  .data-table > tbody > tr { display: block; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-soft); overflow: hidden; }
   .data-table > tbody > tr > td { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; height: auto; min-height: 38px; padding: 7px 14px !important; border: 0; border-bottom: 1px solid var(--line); font-size: 13px; text-align: right; background: transparent !important; }
   .data-table > tbody > tr > td:last-child { border-bottom: 0; }
   .data-table > tbody > tr:last-child > td:not(:last-child) { border-bottom: 1px solid var(--line); }
@@ -73,7 +73,7 @@
   .data-table > tbody > tr > td[colspan]::before { display: none; }
   .data-table .cell-date, .data-table .cell-money, .data-table .cell-balance, .data-table .cell-link { font-size: 13px; }
   .data-table .status-group { justify-content: flex-end; }
-  .data-table > tbody > tr.row-warn { background: #fdf7ee; }
+  .data-table > tbody > tr.row-warn { background: linear-gradient(var(--warn-row), var(--warn-row)), var(--surface); }
   .data-table .row-actions { justify-content: flex-end; gap: 10px; }
   .data-table .row-actions::before { display: none; }
 
@@ -108,13 +108,15 @@
   .app-table > tbody { padding: 10px 12px; display: grid; gap: 10px; }
   .app-table > tbody > tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
   .app-table > tbody > tr > td { display: block; padding: 0 !important; border: 0; font-size: 13px; background: transparent !important; min-width: 0; overflow-wrap: anywhere; }
-  .app-table > tbody > tr > td::before { content: attr(data-label); display: block; margin-bottom: 1px; color: var(--faint); font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .app-table > tbody > tr > td::before { content: attr(data-label); display: block; margin-bottom: 1px; color: var(--faint); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
   .app-table > tbody > tr > td[colspan] { grid-column: 1 / -1; }
   .app-table > tbody > tr > td.num-cell { text-align: left; }
   .app-table > tbody > tr > td[colspan]::before { display: none; }
   .app-table > tbody > tr:has(> td[colspan]) { display: block; border: 0; padding: 0; background: transparent; }
   .app-table .empty-state { min-height: 0; padding: 14px 6px 16px; }
   .app-table > tbody:has(> tr > td[colspan]) { padding-bottom: 8px; }
+  .panel-empty { padding: 0 14px; }
+  .panel-empty .empty-state { min-height: 0; padding: 14px 0; }
 
 
   /* invoice form: line items as stacked cards, action buttons side by side */
@@ -132,17 +134,36 @@
   main form > div:has(> .btn[type="submit"]) { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   main form > div:has(> .btn[type="submit"]) .btn { margin: 0 !important; }
 
+  /* expense form: each line is a card; "Line 1" and the remove button share the top row */
+  #expense-lines, #expense-lines tbody { display: block; width: 100%; background: transparent !important; }
+  #expense-lines thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  #expense-lines tr.line-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-bottom: 12px; padding: 10px 12px 14px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  #expense-lines tr.line-row[hidden] { display: none; }
+  #expense-lines tr.line-row > td { display: block; width: auto; padding: 0; border: 0; background: transparent; }
+  #expense-lines tr.line-row > td::before { content: attr(data-label); display: block; margin-bottom: 4px; color: var(--faint); font-size: 12px; font-weight: 600; }
+  #expense-lines tr.line-row > td.line-no { grid-column: 1; grid-row: 1; align-self: center; color: var(--ink-2); font-weight: 650; text-align: left; }
+  #expense-lines tr.line-row > td.line-no::before { display: inline; margin: 0; content: "Line "; color: inherit; font-size: inherit; font-weight: inherit; }
+  #expense-lines tr.line-row > td.line-del-cell { grid-column: 2; grid-row: 1; justify-self: end; margin-right: -6px; }
+  #expense-lines tr.line-row > td.line-del-cell::before { display: none; }
+  #expense-lines td[data-label="Category"], #expense-lines td[data-label="Description"] { grid-column: 1 / -1; }
+  .expense-lines-foot { flex-wrap: wrap; }
+  #add-line { width: 100%; }
+
   /* pagination & touch targets */
   .pagination { flex-wrap: wrap; gap: 6px; margin: 20px 0 0; }
   .pagination .page-link { min-width: 38px; min-height: 38px; display: grid; place-items: center; padding: 0 8px; font-size: 13px; border-radius: 10px !important; }
   .icon-btn { width: 36px; height: 36px; }
   .icon-btn svg { width: 18px; height: 18px; }
   .side-link { min-height: 40px; font-size: 14px; }
-  .nav-group-label, .sidebar-caption { font-size: 11.5px; }
+  .nav-group-label { font-size: 12px; }
   .empty-state strong, .list-empty-state strong { font-size: 13.5px; }
   .empty-state small, .list-empty-state small { font-size: 12px; }
 }
 @media (max-width: 400px) {
+  /* Very narrow phones: the avatar alone opens the account menu, leaving room for the business name. */
+  .account-chevron { display: none; }
+  .account-trigger { padding-right: 3px; }
+  .topbar-brand .brand-mark { display: none; }
   .page-actions, .filter-actions { grid-template-columns: 1fr; }
   .kpi-value { font-size: 17px; }
   .page-heading h1 { font-size: 22px; }
@@ -150,4 +171,15 @@
 
 @media (max-width: 767.98px) {
   .line-items-wrap { border: 0; border-radius: 0; overflow: visible; }
+}
+
+/* Phones: show only the business name; the Alledgerly logo and name are hidden.
+   With no business (has-business missing) the logo stays so the bar is never empty.
+   The light/dark switch moves from the top bar to the foot of the sidebar, and
+   static/js/fit-business-name.js shrinks a long business name until it fits. */
+@media (max-width: 767.98px) {
+  .topbar.has-business .topbar-brand { display: none; }
+  .topbar-business { flex: 1 1 auto; padding-left: 0; border-left: 0; font-size: 18px; }
+  .topbar .theme-toggle { display: none; }
+  .mobile-sidebar-foot { display: block; }
 }

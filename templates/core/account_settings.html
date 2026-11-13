@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Company settings | Allegderly{% endblock %}
+{% block title %}Company settings | Alledgerly{% endblock %}
 
 {% block content %}
-{% include "partials/_page_heading.html" with eyebrow="Workspace" title="Company settings" subtitle="Your business details. These appear at the top of every printed invoice." %}
+{% include "partials/_page_heading.html" with title="Company settings" subtitle="Your business details. These appear at the top of every printed invoice." %}
 <form method="post" class="settings-form">
   {% csrf_token %}
   <div class="card mb-4"><div class="card-body">

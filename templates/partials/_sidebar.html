@@ -1,17 +1,22 @@
+{% load static %}
 <aside class="app-sidebar d-none d-lg-flex">
-  <a class="sidebar-brand" href="{% url 'dashboard' %}">
-    <span class="brand-mark">A</span>
-    <span><strong>Allegderly</strong><small>Operations</small></span>
-  </a>
+  {% include "partials/_breadcrumbs.html" %}
   {% include "partials/_nav_links.html" %}
 </aside>
 
-<div class="offcanvas offcanvas-start mobile-sidebar" tabindex="-1" id="mobileNavigation" aria-labelledby="mobileNavigationLabel">
+<div class="offcanvas offcanvas-start mobile-sidebar" tabindex="-1" id="mobileNavigation" aria-label="Navigation">
   <div class="offcanvas-header">
-    <a class="sidebar-brand" href="{% url 'dashboard' %}" id="mobileNavigationLabel">
-      <span class="brand-mark">A</span><span><strong>Allegderly</strong><small>Operations</small></span>
-    </a>
+    {% include "partials/_breadcrumbs.html" %}
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body pt-2">{% include "partials/_nav_links.html" %}</div>
+  {# Phones: the light/dark switch lives here (pinned, in thumb reach) instead of the top bar. #}
+  <div class="mobile-sidebar-foot">
+    <button type="button" class="sidebar-theme-row" role="switch" aria-checked="false" data-theme-toggle>
+      <i class="nav-glyph fa-solid fa-moon" aria-hidden="true"></i>
+      <span class="sidebar-theme-label">Dark mode</span>
+      <span class="theme-toggle" aria-hidden="true"><span class="theme-toggle-knob"><i class="fa-solid fa-sun"></i><i class="fa-solid fa-moon"></i></span></span>
+    </button>
+  </div>
 </div>
+<script src="{% static 'js/sidebar.js' %}"></script>

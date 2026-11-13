@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Dashboard | Allegderly{% endblock %}
+{% block title %}Dashboard | Alledgerly{% endblock %}
 {% block content %}
 <div class="page-heading dashboard-heading">
-  <div><div class="eyebrow">WORKSPACE</div><h1>Good to see you, {{ request.user.username }}.</h1><p class="page-subtitle">Quick access to the things you work with.</p></div>
+  <h1>Good to see you, {{ request.user.first_name|default:request.user.username }}.</h1>
 </div>
 
-<div class="kpi-strip">
+<div class="kpi-strip kpi-strip-5">
   <div class="kpi-card tone-accent">
     <span class="kpi-label">Open invoices</span>
     <div class="kpi-main"><strong class="kpi-value">{{ open_invoice_count }}</strong></div>
@@ -35,9 +35,9 @@
 
 <div class="section-title">Quick links</div>
 <div class="quick-link-grid">
-  <a class="quick-link-card" href="{% url 'invoices:create' %}"><span class="quick-link-glyph" aria-hidden="true">▧</span><span><strong>New Invoice</strong><small>Bill a customer</small></span></a>
-  <a class="quick-link-card" href="{% url 'purchasing:create' %}"><span class="quick-link-glyph" aria-hidden="true">⊞</span><span><strong>New Purchase Order</strong><small>Order from a vendor</small></span></a>
-  <a class="quick-link-card" href="{% url 'returns:create' %}"><span class="quick-link-glyph" aria-hidden="true">↩</span><span><strong>New Return</strong><small>Record a customer return</small></span></a>
-  <a class="quick-link-card" href="{% url 'damages:create' %}"><span class="quick-link-glyph" aria-hidden="true">◇</span><span><strong>New Damage Report</strong><small>Log damaged stock</small></span></a>
+  <a class="quick-link-card" href="{% url 'invoices:create' %}"><span class="quick-link-glyph" aria-hidden="true"><i class="fa-solid fa-file-invoice-dollar"></i></span><span><strong>New Invoice</strong><small>Bill a customer</small></span></a>
+  <a class="quick-link-card" href="{% url 'purchasing:create' %}"><span class="quick-link-glyph" aria-hidden="true"><i class="fa-solid fa-clipboard-list"></i></span><span><strong>New Purchase Order</strong><small>Order from a vendor</small></span></a>
+  <a class="quick-link-card" href="{% url 'returns:create' %}"><span class="quick-link-glyph" aria-hidden="true"><i class="fa-solid fa-rotate-left"></i></span><span><strong>New Return</strong><small>Record a customer return</small></span></a>
+  <a class="quick-link-card" href="{% url 'damages:create' %}"><span class="quick-link-glyph" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span><span><strong>New Damage Report</strong><small>Log damaged stock</small></span></a>
 </div>
 {% endblock %}

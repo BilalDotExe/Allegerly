@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 
 from businesses.forms import BusinessLoginForm
 from businesses.middleware import BUSINESS_SESSION_KEY
+from businesses.models import Business
 from inventory.models import Item
 from .forms import CompanyProfileForm, EmployeeCreateForm, EmployeePasswordResetForm
 from .models import CompanyProfile
@@ -39,9 +40,18 @@ class AllegderlyLogoutView(LogoutView):
 
 @group_required(GROUP_ADMIN)
 def account_settings(request):
-    form = CompanyProfileForm(request.POST or None, instance=CompanyProfile.load())
+    profile = CompanyProfile.load()
+    # A profile nobody has edited still holds the model's placeholder name; start
+    # from the business's real name so saving other fields never renames the top bar.
+    if request.business and profile.name == CompanyProfile._meta.get_field("name").default:
+        profile.name = request.business.name
+    form = CompanyProfileForm(request.POST or None, instance=profile)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        profile = form.save()
+        # The top bar shows Business.name (control database); invoices print
+        # CompanyProfile.name (this business's database). Keep them the same name.
+        if request.business and request.business.name != profile.name:
+            Business.objects.filter(pk=request.business.pk).update(name=profile.name)
         messages.success(request, "Company settings saved.")
         return redirect("account_settings")
     return render(request, "core/account_settings.html", {"form": form})
@@ -148,7 +158,7 @@ def dashboard(request):
 
     # Stock and balances come from bulk queries; item.current_stock() and
     # invoice.balance_due each cost queries per row, which adds up on the Pi.
-    items = Item.objects.annotate(stock=Coalesce(Sum("movements__quantity"), 0)).order_by("name")
+    items = Item.objects.filter(is_active=True).annotate(stock=Coalesce(Sum("movements__quantity"), 0)).order_by("name")
     low_stock_items = [item for item in items if item.stock <= item.reorder_level]
 
     open_rows = sorted(

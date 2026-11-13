@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% load phone_filters money_filters %}
-{% block title %}Customers | Allegderly{% endblock %}
+{% block title %}Customers | Alledgerly{% endblock %}
 {% block content %}
-{% url 'customers:create' as add_url %}{% include "partials/_page_heading.html" with eyebrow="PEOPLE" title="Customers" subtitle="Manage customer details and outstanding balances." add_url=add_url add_label="Add Customer" %}
+{% url 'customers:create' as add_url %}{% include "partials/_page_heading.html" with title="Customers" subtitle="Manage customer details and outstanding balances." add_url=add_url add_label="Add Customer" %}
 <section class="table-panel" aria-label="All customers">
   <div class="table-heading"><div><h2>All customers</h2><p>Contact details and current balances</p></div></div>
   <div class="table-responsive"><table class="table data-table">
@@ -39,7 +39,7 @@
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark">⌕</span><span><strong>No customers found</strong><small>Add a customer to get started.</small></span></div></td></tr>
+      <tr><td colspan="8"><div class="list-empty-state"><span class="empty-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span><span><strong>No customers found</strong><small>Add a customer to get started.</small></span></div></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

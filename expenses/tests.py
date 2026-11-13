@@ -25,7 +25,7 @@ class ExpenseBase(TestCase):
 
     def post_report(self, lines, **header):
         data = {
-            "name": "Shop run", "report_date": "", "notes": "",
+            "name": "Shop run", "report_date": timezone.localdate().isoformat(), "notes": "",
             "lines-TOTAL_FORMS": len(lines), "lines-INITIAL_FORMS": 0,
             "lines-MIN_NUM_FORMS": 0, "lines-MAX_NUM_FORMS": 1000,
         }
@@ -45,23 +45,32 @@ class ExpenseReportTests(ExpenseBase):
         self.assertEqual(report.total, Decimal("19.75"))
         self.assertEqual(self.make_report(name="Second").report_number, "EXP-000002")
 
-    def test_only_the_name_is_required_and_blank_date_and_amount_default(self):
-        r = self.post_report([("Cleaning cloths", "Anything I like", "")])
+    def test_only_the_date_is_required_and_a_blank_name_comes_from_it(self):
+        r = self.post_report([("Cleaning cloths", "Anything I like", "")], name="", report_date="2026-11-03")
         report = ExpenseReport.objects.get()
         self.assertRedirects(r, reverse("expenses:detail", args=[report.pk]))
-        self.assertEqual(report.report_date, timezone.localdate())
+        self.assertEqual(report.name, "Expense Nov 3, 2026")
         line = report.lines.get()
         self.assertEqual((line.amount, line.category), (Decimal("0.00"), "Anything I like"))
 
-    def test_report_can_be_saved_with_no_lines_but_needs_a_name(self):
-        self.post_report([("", "", "")])
+    def test_report_can_be_saved_with_no_lines_but_needs_a_date(self):
+        self.post_report([("", "", "")], report_date="2026-11-03")
         self.assertEqual(ExpenseReport.objects.get().lines.count(), 0)
-        self.post_report([], name="")
+        r = self.post_report([], report_date="")
+        self.assertContains(r, "This field is required")
         self.assertEqual(ExpenseReport.objects.count(), 1)
 
-    def test_a_line_with_an_amount_needs_a_description(self):
-        self.post_report([("", "Rent", "50")], name="Bad")
-        self.assertFalse(ExpenseReport.objects.filter(name="Bad").exists())
+    def test_a_typed_name_is_kept_and_clearing_it_on_edit_falls_back_to_the_date(self):
+        report = self.make_report(name="  Market day  ")
+        self.assertEqual(report.name, "Market day")
+        report.name = ""
+        report.save()
+        self.assertEqual(report.name, "Expense Oct 1, 2026")
+
+    def test_a_line_needs_nothing_but_something_typed(self):
+        self.post_report([("", "Rent", "50")], name="Amount only")
+        line = ExpenseReport.objects.get(name="Amount only").lines.get()
+        self.assertEqual((line.description, line.category, line.amount), ("", "Rent", Decimal("50.00")))
 
     def test_cannot_be_deleted(self):
         with self.assertRaises(ValidationError):
@@ -79,44 +88,59 @@ class ExpenseReportTests(ExpenseBase):
         self.assertEqual(report.total, Decimal("15.00"))
         self.assertIn("expense_report_updated", set(AuditLog.objects.values_list("action", flat=True)))
 
-    def test_category_with_no_text_in_its_rows_is_skipped(self):
+    def test_a_row_with_only_a_category_is_skipped(self):
         self.post_report([("", "Rent", "")])
         self.assertEqual(ExpenseReport.objects.get().lines.count(), 0)
 
-    def test_grouping_numbers_lines_per_category(self):
+    def test_category_totals_merge_spellings(self):
         report = self.make_report(lines=[("A", "Rent", "1"), ("B", "rent", "2"), ("C", "Supplies", "3")])
-        groups = report.grouped_lines()
-        self.assertEqual([g["category"] for g in groups], ["Rent", "Supplies"])
-        self.assertEqual([line.line_no for line in groups[0]["lines"]], [1, 2])
-        self.assertEqual((groups[0]["total"], groups[1]["total"]), (Decimal("3.00"), Decimal("3.00")))
+        totals = report.category_totals()
+        self.assertEqual([row["category"] for row in totals], ["Rent", "Supplies"])
+        self.assertEqual([(row["count"], row["total"]) for row in totals], [(2, Decimal("3.00")), (1, Decimal("3.00"))])
 
-    def test_form_is_a_category_accordion_with_a_dropdown(self):
+    def test_form_suggests_categories_and_has_line_controls(self):
         report = self.make_report(lines=[("A", "Rent", "1"), ("B", "Custom thing", "2")])
         create = self.client.get(reverse("expenses:create"))
-        self.assertContains(create, 'id="add-category"')
-        self.assertContains(create, '<option value="Custom thing">')
-        self.assertNotContains(create, "expense-categories")
+        self.assertContains(create, '<datalist id="expense-category-options">')
+        self.assertContains(create, '<option value="Custom thing">')   # typed before, now suggested
+        self.assertContains(create, '<option value="Utilities">')      # starter list
+        self.assertContains(create, 'list="expense-category-options"')
+        self.assertContains(create, 'id="add-line"')
+        self.assertContains(create, 'id="remove-line-dialog"')        # removal is confirmed first
         edit = self.client.get(reverse("expenses:edit", args=[report.pk]))
-        page = edit.content.decode().split("<template")[0]   # the sections the server drew
-        self.assertEqual(page.count('class="exp-cat is-open"'), 1)   # only one open
-        self.assertEqual(page.count('class="exp-cat"'), 1)
-        self.assertEqual(page.count('class="line-no">1</td>'), 2)   # numbering restarts per category
+        page = edit.content.decode().split("<template")[0]   # the rows the server drew
+        self.assertEqual(page.count('class="line-del-btn"'), 2)
+        self.assertIn('data-label="Line">2</td>', page)               # one running line number
 
-    def test_a_category_not_in_the_dropdown_comes_back_as_other(self):
-        r = self.post_report([("", "Brand new thing", "5")], name="Bad")
-        self.assertContains(r, "This field is required")
-        self.assertContains(r, 'value="Brand new thing"')
-        self.assertContains(r, '<option value="__other__" selected>')
+    def test_a_typed_new_category_is_saved_as_typed(self):
+        self.post_report([("Stall fee", "Farmers market", "35")])
+        self.assertEqual(ExpenseLine.objects.get().category, "Farmers market")
 
-    def test_pages_render_grouped_with_line_numbers(self):
+    def test_edit_can_remove_a_line(self):
+        report = self.make_report(lines=[("Keep", "Rent", "10"), ("Drop", "Rent", "5")])
+        keep, drop = report.lines.all()
+        data = {"name": report.name, "report_date": "2026-10-01", "notes": "",
+                "lines-TOTAL_FORMS": 2, "lines-INITIAL_FORMS": 2, "lines-MIN_NUM_FORMS": 0, "lines-MAX_NUM_FORMS": 1000}
+        for i, line in enumerate((keep, drop)):
+            data.update({f"lines-{i}-id": line.pk, f"lines-{i}-report": report.pk, f"lines-{i}-description": line.description,
+                         f"lines-{i}-category": line.category, f"lines-{i}-amount": str(line.amount)})
+        data["lines-1-DELETE"] = "on"
+        self.client.post(reverse("expenses:edit", args=[report.pk]), data)
+        self.assertEqual(list(report.lines.values_list("description", flat=True)), ["Keep"])
+        self.assertEqual(report.total, Decimal("10.00"))
+
+    def test_pages_render_with_line_numbers(self):
         report = self.make_report(lines=[("A", "Rent", "1"), ("B", "Rent", "2"), ("C", "Supplies", "3")])
         detail = self.client.get(reverse("expenses:detail", args=[report.pk]))
-        self.assertContains(detail, '<td class="col-line">2</td>', count=1)
-        self.assertContains(detail, "subtotal $3.00", count=2)   # Rent 1+2, Supplies 3
+        self.assertContains(detail, '<td class="col-line">3</td>', count=1)
+        self.assertContains(detail, "By category")
         listing = self.client.get(reverse("expenses:list"))
-        self.assertContains(listing, '<td class="col-line">2</td>', count=1)
+        self.assertContains(listing, '<td class="col-line">3</td>', count=1)
         self.assertContains(listing, "> New Expense</a>")
         self.assertIn(report.report_number, self.client.get(reverse("expenses:list") + "?export=csv").content.decode())
+
+    def test_in_the_sidebar_for_staff_not_employees(self):
+        self.assertContains(self.client.get(reverse("dashboard")), f'href="{reverse("expenses:list")}"')
 
     def test_employees_cannot_reach_expenses(self):
         employee = User.objects.create_user("emp", password="pw")
@@ -124,6 +148,7 @@ class ExpenseReportTests(ExpenseBase):
         self.client.force_login(employee)
         self.assertEqual(self.client.get(reverse("expenses:list")).status_code, 403)
         self.assertEqual(self.client.get(reverse("reports:expenses")).status_code, 403)
+        self.assertNotContains(self.client.get(reverse("dashboard")), f'href="{reverse("expenses:list")}"')
 
 
 class ExpensesReportTests(ExpenseBase):
@@ -148,8 +173,37 @@ class ExpensesReportTests(ExpenseBase):
         self.assertEqual(r.context["total"], Decimal("3.00"))
         csv = self.client.get(reverse("reports:expenses") + "?export=csv").content.decode()
         self.assertIn("Line", csv.splitlines()[0])
-        self.assertIn(",2,B,", csv)
+        self.assertIn(",2,,B,", csv)   # line 2, no category, description B (same column order as the form)
 
     def test_listed_on_the_reports_index(self):
         self.assertContains(self.client.get(reverse("reports:index")), reverse("reports:expenses"))
         self.assertContains(self.client.get(reverse("reports:expenses")), "Expenses Report")
+
+
+class ExpenseDashboardTests(ExpenseBase):
+    def test_kpi_cash_flow_and_category_chart_include_expenses(self):
+        from core.dashboard_data import build_dashboard
+
+        today = timezone.localdate()
+        self.make_report(when=today, lines=[("Power", "Utilities", "40"), ("Rent", "Rent", "100"), ("Bulbs", "utilities", "5")])
+        self.make_report(when=today + timedelta(days=40), lines=[("Not spent yet", "Rent", "999")])
+        data = build_dashboard(6, today)
+        kpi = {k["label"]: k for k in data["kpis"]}["Expenses this month"]
+        self.assertEqual(kpi["value"], "$145.00")
+        self.assertFalse(kpi["good_up"])   # spending more is not "good"
+        this_month = data["cash_chart"]["cols"][-1]
+        self.assertIn(("Expenses", "$145.00"), [(b["label"], b["value"]) for b in this_month["bars"]])
+        chart = data["expense_chart"]
+        self.assertEqual([s["label"] for s in chart["legend"]], ["Rent", "Utilities"])   # biggest first, spellings merged
+        self.assertEqual(chart["cols"][-1]["total"], "$145.00")
+        page = self.client.get(reverse("dashboard"))
+        self.assertContains(page, "Expenses this month")
+        self.assertContains(page, f'href="{reverse("expenses:list")}"')
+
+    def test_beyond_four_categories_the_rest_are_other(self):
+        from core.dashboard_data import build_dashboard
+
+        today = timezone.localdate()
+        self.make_report(when=today, lines=[(c, c, str(10 - i)) for i, c in enumerate("ABCDEF")])
+        legend = [s["label"] for s in build_dashboard(6, today)["expense_chart"]["legend"]]
+        self.assertEqual(legend, ["A", "B", "C", "D", "Other"])
